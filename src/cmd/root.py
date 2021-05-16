@@ -16,8 +16,8 @@ def execute():
 def entry_point(ctx, log_level, config_file):
     """
     Hey, welcome! This project aims to provide a set of simple trading bots
-    developed to autonomously trade inside general or crypto-currency
-    Exchanges, such as Binance.
+    developed to autonomously trade inside general or cryptocurrency Exchanges,
+    such as Binance.
     """
     setup_logging(log_level)
     ctx.obj['config'] = parse_config(config_file)
