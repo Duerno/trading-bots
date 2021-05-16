@@ -1,0 +1,17 @@
+# Main
+
+bollinger:
+  assetToTrade: ADA
+  baseAsset: USDT
+  baseAssetUsagePercentage: 100
+  stopLossPercentage: 2
+  stopGainPercentage: 2
+  plotResults: false
+
+# Dependencies
+
+binance:
+  taxPerTransaction: 0.1
+  api:
+    key: "sample-api-key"
+    secret: "sample-api-secret"
