@@ -56,10 +56,7 @@ class FakeBinance:
         }
 
     def get_current_price(self):
-        return {
-            'symbol': 'BTCBUSD',
-            'price': '47277.98000000'
-        }
+        return 47277.98
 
     def get_historical_klines(self, **kwargs):
         raw_klines = [

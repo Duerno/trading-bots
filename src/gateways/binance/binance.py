@@ -85,7 +85,8 @@ class Binance:
         return buy_order, sell_order
 
     def get_current_price(self):
-        return self.binance_client.get_all_tickers(self.symbol)
+        res = self.binance_client.get_all_tickers(self.symbol)
+        return float(res['price'])
 
     def get_historical_klines(self, minutes=50, interval=bnb.Client.KLINE_INTERVAL_1MINUTE):
         self.__reset_client()  # avoid 'connection reset by peer' exception.
@@ -96,4 +97,5 @@ class Binance:
         return utils.parse_klines(raw_klines)
 
     def __reset_client(self):
+        del(self.binance_client)
         self.binance_client = bnb.Client(self.api_key, self.api_secret)
