@@ -42,6 +42,7 @@ class Bollinger:
                 self.__run_internal()
             except Exception as e:
                 logging.error(f'Fail to run bollinger error={e}')
+                self.exchange.reset_client()
             time.sleep(15)
 
     def __run_internal(self):
@@ -50,9 +51,9 @@ class Bollinger:
         state = self.exchange.get_trading_state()
 
         if state == trading_states.PENDING:
-            current_price = self.exchange.get_current_price()
             klines = self.exchange.get_historical_klines()
             df = self.enrich_klines_with_indicators(klines)
+            current_price = self.exchange.get_current_price()
             if self.should_place_order(df, current_price):
                 buy_order, sell_order = self.exchange.place_order(
                     self.base_asset_usage_percentage,
@@ -63,7 +64,7 @@ class Bollinger:
                     sell_order,
                     klines)
         elif state == trading_states.TRADING:
-            # wait until trading finishes.
+            logging.info('Waiting order to complete')
             return
 
     def enrich_klines_with_indicators(self, klines):
@@ -79,6 +80,14 @@ class Bollinger:
         bollinger_low = df.iloc[-1]['bollinger_low']
         bollinger_delta = bollinger_up - bollinger_low
         volatility_threshold = 0.04 * df.iloc[-1]['tp']
+
+        logging.info('Params of should_place_order computed ' +
+                     f'price={current_price} ' +
+                     f'bbup={bollinger_up} ' +
+                     f'bblow={bollinger_low} ' +
+                     f'bbdelta={bollinger_delta} ' +
+                     f'v_th={volatility_threshold}')
+
         return current_price < bollinger_low and bollinger_delta > volatility_threshold
 
     def report_placed_order(self, buy_order, sell_order, klines):
