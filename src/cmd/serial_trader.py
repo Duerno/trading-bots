@@ -1,14 +1,14 @@
-from typing import List
+from typing import List, Dict
 
 import click
 import logging
 import time
 from matplotlib import pyplot as plt
 
-from ..gateways.binance import binance, binance_simulator, fake_binance
 from ..domain.entities import trading_states
-from ..domain.exchanges import Exchange
+from ..domain.exchanges import Exchange, fake
 from ..domain.trading_strategies import TradingStrategy, bollinger
+from ..gateways.binance import binance, simulator
 
 
 @click.command()
@@ -42,31 +42,33 @@ def serial_trader(ctx, exchange_name, trading_strategies):
     asset_to_trade = config['serialTrader']['assetToTrade']
     base_asset = config['serialTrader']['baseAsset']
 
+    # initialize exchange.
     exchange: Exchange = None
     if exchange_name == 'binance':
         exchange = binance.Binance(config, asset_to_trade, base_asset)
     elif exchange_name == 'binance-simulator':
-        exchange = binance_simulator.BinanceSimulator(
+        exchange = simulator.BinanceSimulator(
             config, asset_to_trade, base_asset)
     elif exchange_name == 'fake':
-        exchange = fake_binance.FakeBinance(config, asset_to_trade, base_asset)
+        exchange = fake.FakeExchange(config, asset_to_trade, base_asset)
     else:
         raise ValueError('Invalid exchange name: %s' % exchange_name)
 
+    # initialize strategies.
     strategies: List[TradingStrategy] = []
     trading_strategies_list = str(trading_strategies).split(',')
     if 'bollinger' in trading_strategies_list:
         strategies.append(bollinger.Bollinger(config))
-
     if len(strategies) == 0:
         raise ValueError('No valid strategy found in: %s' % trading_strategies)
 
+    # initialize and run bot.
     bot = SerialTrader(config, exchange, strategies)
     bot.run()
 
 
 class SerialTrader:
-    def __init__(self, config, exchange: Exchange, strategies: List[TradingStrategy]):
+    def __init__(self, config: Dict, exchange: Exchange, strategies: List[TradingStrategy]):
         self.exchange = exchange
         self.strategies = strategies
 
@@ -86,7 +88,7 @@ class SerialTrader:
             except Exception as e:
                 logging.error(f'Fail to run Serial Trader error={e}')
                 self.exchange.reset_client()
-            time.sleep(15)
+            time.sleep(self.cycle_time)
 
     def __run_internal(self):
         logging.debug('Running Serial Trader trading verification')

@@ -2,9 +2,8 @@ import time
 import logging
 import binance as bnb
 
-from . import utils
 from ...domain.entities import trading_states
-from ...domain.exchanges import Exchange
+from ...domain.exchanges import Exchange, utils
 
 
 class Binance(Exchange):

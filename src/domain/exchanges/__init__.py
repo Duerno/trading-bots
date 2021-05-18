@@ -8,7 +8,7 @@ class Exchange:
     exchange.
     """
 
-    def __init__(self, config: Dict, symbol: str):
+    def __init__(self, config: Dict, asset_to_trade: str, base_asset: str):
         pass
 
     def get_market_depth(self):

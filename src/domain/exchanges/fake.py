@@ -1,10 +1,10 @@
+from . import Exchange
 from . import utils
-from ...domain.entities import trading_states
-from ...domain.exchanges import Exchange
+from ..entities import trading_states
 
 
-class FakeBinance(Exchange):
-    def __init__(self, config, symbol):
+class FakeExchange(Exchange):
+    def __init__(self, config, asset_to_trade, base_asset):
         pass
 
     def get_market_depth(self):
