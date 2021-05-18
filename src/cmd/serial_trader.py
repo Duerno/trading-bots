@@ -7,13 +7,13 @@ from matplotlib import pyplot as plt
 
 from ..domain.entities import trading_states
 from ..domain.exchanges import Exchange, fake
-from ..domain.trading_strategies import TradingStrategy, bollinger
+from ..domain.trading_strategies import TradingStrategy, bollinger, dma
 from ..gateways.binance import binance, simulator
 
 
 @click.command()
 @click.option('--exchange-name', help='Define the exchange to be used. (options: binance|binance-simulator|fake)')
-@click.option('--trading-strategies', help='Define the trading strategies to be used separated by comma. (options: bollinger)')
+@click.option('--trading-strategies', help='Define the trading strategies to be used separated by comma. (options: bollinger|dma)')
 @click.pass_context
 def serial_trader(ctx, exchange_name, trading_strategies):
     """
@@ -59,6 +59,8 @@ def serial_trader(ctx, exchange_name, trading_strategies):
     trading_strategies_list = str(trading_strategies).split(',')
     if 'bollinger' in trading_strategies_list:
         strategies.append(bollinger.Bollinger(config))
+    if 'dma' in trading_strategies_list:
+        strategies.append(dma.DualMovingAverage(config))
     if len(strategies) == 0:
         raise ValueError('No valid strategy found in: %s' % trading_strategies)
 
@@ -120,9 +122,11 @@ class SerialTrader:
     def __enrich_klines_with_indicators(self, klines):
         klines['tp'] = (klines['close'] + klines['low'] + klines['high']) / 3
         klines['std'] = klines['tp'].rolling(20).std(ddof=0)
-        klines['sma'] = klines['tp'].rolling(20).mean()
-        klines['bollinger_low'] = klines['sma'] - 2*klines['std']
-        klines['bollinger_up'] = klines['sma'] + 2*klines['std']
+        klines['sma_20'] = klines['tp'].rolling(20).mean()
+        klines['sma_50'] = klines['tp'].rolling(50).mean()
+        klines['sma_200'] = klines['tp'].rolling(200).mean()
+        klines['bollinger_low'] = klines['sma_20'] - 2*klines['std']
+        klines['bollinger_up'] = klines['sma_20'] + 2*klines['std']
         return klines
 
     def __report_placed_order(self, buy_order, sell_order, klines):
