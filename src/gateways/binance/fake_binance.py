@@ -1,8 +1,9 @@
 from . import utils
 from ...domain.entities import trading_states
+from ...domain.exchanges import Exchange
 
 
-class FakeBinance:
+class FakeBinance(Exchange):
     def __init__(self, config, symbol):
         pass
 
@@ -102,3 +103,6 @@ class FakeBinance:
             ]
         ]
         return utils.parse_klines(raw_klines)
+
+    def reset_client(self):
+        pass

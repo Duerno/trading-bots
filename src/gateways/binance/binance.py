@@ -1,11 +1,13 @@
 import time
 import logging
 import binance as bnb
+
 from . import utils
 from ...domain.entities import trading_states
+from ...domain.exchanges import Exchange
 
 
-class Binance:
+class Binance(Exchange):
     def __init__(self, config, asset_to_trade, base_asset):
         self.tax_per_transaction = float(
             config['binance']['taxPerTransaction'])

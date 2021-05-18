@@ -1,6 +1,7 @@
-# Main
+# Bots
 
-bollinger:
+serialTrader:
+  cycleTime: 15
   assetToTrade: ADA
   baseAsset: USDT
   baseAssetUsagePercentage: 100
@@ -8,10 +9,15 @@ bollinger:
   stopGainPercentage: 2
   plotResults: false
 
-# Dependencies
+# Trading Strategies
+
+bollinger:
+  minRelativeBandsDelta: 0.04
+
+# Exchanges
 
 binance:
-  taxPerTransaction: 0.1
+  taxPerTransaction: 0.075
   api:
     key: "sample-api-key"
     secret: "sample-api-secret"

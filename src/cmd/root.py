@@ -24,9 +24,9 @@ def entry_point(ctx, log_level, config_file):
 
 
 def add_subcommands():
-    from . import bollinger
+    from . import serial_trader
     modules = (
-        bollinger,
+        serial_trader,
     )
     for mod in modules:
         for attr in dir(mod):

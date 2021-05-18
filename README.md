@@ -34,13 +34,13 @@ variables can replace the config file settings, they must be all capitalized,
 prefixed with `BOT_` and each different YAML hierarchy level must be separated
 by an `_`.
 
-As an example, one can setup some settings, run the `bollinger` bot and set the
-logging level as following:
+As an example, one can setup some settings for the Binance Exchange and run the
+`serial-trader` bot with some typical settings as following:
 
 ```sh
 export BOT_BINANCE_API_KEY=my-super-secret-api-key
 export BOT_BINANCE_API_SECRET=my-super-secret-api-secret
-python3 main.py --log-level=debug bollinger
+python3 main.py --log-level=info serial-trader --exchange-name=binance --trading-strategies=bollinger
 ```
 
 Now, the chosen trading bot must be up and running. Enjoy!
@@ -54,10 +54,30 @@ Unfortunately, this project doesn't have any tests yet.
 Useful information about the available bots, how they work and their specific
 settings.
 
-### Bollinger Bot
+For more information about the bots description, workflow and parameters
+details, please run the CLI helper as following:
 
-Bollinger is a trading bot that uses Bollinger Bands to decide when to enter a
-trade.
+```sh
+python3 main.py <BOT_NAME> --help
+```
+
+### Serial Trader
+
+Serial Trader is a simple bot for trading serially using multiple trading
+strategies.
+
+Given a pair of assets and the chosen trading strategies, the Serial Trader
+bot enters and exits trades serially, i.e. creating only one trade at a time.
+
+## Available Trading Strategies
+
+Useful information about the available trading strategies, how they work and
+their specific settings.
+
+### Bollinger
+
+Bollinger is a trading strategy that uses Bollinger Bands to decide when to
+enter a trade.
 
 ## Available Exchanges
 
