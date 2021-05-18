@@ -10,6 +10,8 @@ class Binance(Exchange):
     def __init__(self, config, asset_to_trade, base_asset):
         self.tax_per_transaction = float(
             config['binance']['taxPerTransaction'])
+        self.interval_in_minutes = int(
+            config['binanceSimulator']['intervalInMinutes'])
 
         self.api_key = config['binance']['api']['key']
         self.api_secret = config['binance']['api']['secret']
@@ -89,12 +91,12 @@ class Binance(Exchange):
         res = self.binance_client.get_all_tickers(self.symbol)
         return float(res['price'])
 
-    def get_historical_klines(self, minutes=50, interval=bnb.Client.KLINE_INTERVAL_1MINUTE):
+    def get_historical_klines(self, num_intervals=210):
         self.reset_client()  # avoid connection problems.
         raw_klines = self.binance_client.get_historical_klines(
             self.symbol,
-            interval,
-            '{} minutes ago UTC'.format(minutes))
+            f'{self.interval_in_minutes}m',
+            f'{self.interval_in_minutes * num_intervals} minutes ago UTC')
         return utils.parse_klines(raw_klines)
 
     def reset_client(self):

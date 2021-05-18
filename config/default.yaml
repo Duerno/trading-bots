@@ -17,7 +17,12 @@ bollinger:
 # Exchanges
 
 binance:
+  intervalInMinutes: 1
   taxPerTransaction: 0.075
   api:
     key: "sample-api-key"
     secret: "sample-api-secret"
+
+binanceSimulator:
+  intervalInMinutes: 3
+  numberOfIntervals: 20000
