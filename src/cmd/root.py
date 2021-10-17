@@ -25,8 +25,10 @@ def entry_point(ctx, log_level, config_file):
 
 def add_subcommands():
     from . import serial_trader
+    from . import one_time_opportunity_finder
     modules = (
         serial_trader,
+        one_time_opportunity_finder,
     )
     for mod in modules:
         for attr in dir(mod):
