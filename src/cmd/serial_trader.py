@@ -5,10 +5,10 @@ import logging
 import time
 from matplotlib import pyplot as plt
 
-from ..domain.entities import trading_states
-from ..domain.exchanges import Exchange, fake
-from ..domain.trading_strategies import TradingStrategy, bollinger, dma
-from ..gateways.binance import binance, simulator
+from src.domain.entities import trading_states
+from src.domain.exchanges import Exchange, fake, utils
+from src.domain.trading_strategies import TradingStrategy, bollinger, dma
+from src.gateways.binance import binance, simulator
 
 
 @click.command()
@@ -77,6 +77,7 @@ class SerialTrader:
         botConfig = config['serialTrader']
         self.cycle_time_in_seconds = botConfig['cycleTimeInSeconds']
         self.asset_to_trade = botConfig['assetToTrade']
+        self.base_asset = botConfig['baseAsset']
         self.plot_results = botConfig['plotResults']
         self.stop_loss_percentage = float(botConfig['stopLossPercentage'])
         self.stop_gain_percentage = float(botConfig['stopGainPercentage'])
@@ -105,7 +106,8 @@ class SerialTrader:
 
             should_place_order = False
             for strategy in self.strategies:
-                should_place_order = strategy.should_place_order(df, price)
+                should_place_order = strategy.should_place_order(
+                    df, price, utils.build_symbol(self.asset_to_trade, self.base_asset))
                 if should_place_order:
                     break
 

@@ -1,8 +1,8 @@
 import logging
 
 from . import binance
-from ...domain.entities import trading_states
-from ...domain.exchanges import Exchange, utils
+from src.domain.entities import trading_states
+from src.domain.exchanges import Exchange, utils
 
 
 class BinanceSimulator(Exchange):

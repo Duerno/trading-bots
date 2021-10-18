@@ -21,7 +21,7 @@ class Bollinger(TradingStrategy):
         self.min_relative_bands_delta = float(
             config['bollinger']['minRelativeBandsDelta'])
 
-    def should_place_order(self, df, current_price):
+    def should_place_order(self, df, current_price: float, symbol: str) -> bool:
         bollinger_up = df.iloc[-1]['bollinger_up']
         bollinger_low = df.iloc[-1]['bollinger_low']
         bollinger_delta = bollinger_up - bollinger_low

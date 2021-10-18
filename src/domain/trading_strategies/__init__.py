@@ -17,5 +17,5 @@ class TradingStrategy():
     def __init__(self, config: Dict):
         pass
 
-    def should_place_order(self, df, current_price: float) -> bool:
+    def should_place_order(self, df, current_price: float, symbol: str) -> bool:
         pass

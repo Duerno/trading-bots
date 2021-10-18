@@ -24,6 +24,8 @@ bollinger:
 periodMax:
   periodUsed: 1y
   secondsToUpdateCache: 600
+  cacheUpdater:
+    enabled: true
 
 # Exchanges
 
@@ -37,3 +39,9 @@ binance:
 binanceSimulator:
   intervalInMinutes: 3
   numberOfIntervals: 20000
+
+# Other dependencies
+
+redis:
+  host: localhost
+  port: 6379

@@ -1,6 +1,7 @@
 from . import Exchange
 from . import utils
-from ..entities import trading_states
+
+from src.domain.entities import trading_states
 
 
 class FakeExchange(Exchange):

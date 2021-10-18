@@ -4,9 +4,11 @@ import click
 import logging
 import time
 
-from ..domain.exchanges import Exchange, fake
-from ..domain.trading_strategies import TradingStrategy, period_max
-from ..gateways.binance import binance, simulator
+from src.domain.cache import Cache
+from src.domain.exchanges import Exchange, fake
+from src.domain.trading_strategies import TradingStrategy, period_max
+from src.gateways.redis import redis
+from src.gateways.binance import binance, simulator
 
 
 @click.command()
@@ -43,11 +45,14 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     else:
         raise ValueError('Invalid exchange name: %s' % exchange_name)
 
+    # initialize cache.
+    cache: Cache = redis.Redis(config)
+
     # initialize strategies.
     strategies: List[TradingStrategy] = []
     trading_strategies_list = str(trading_strategies).split(',')
     if 'period-max' in trading_strategies_list:
-        strategies.append(period_max.PeriodMax(config))
+        strategies.append(period_max.PeriodMax(config, exchange, cache))
     if len(strategies) == 0:
         raise ValueError('No valid strategy found in: %s' % trading_strategies)
 
@@ -103,8 +108,8 @@ class ParallelTrader:
 
             should_place_order = False
             for strategy in self.strategies:
-                # TODO(duerno): add symbol as a param to the should_place_order method of trading strategies.
-                should_place_order = strategy.should_place_order(None, price)
+                should_place_order = strategy.should_place_order(
+                    None, price, symbol)
                 if should_place_order:
                     break
 

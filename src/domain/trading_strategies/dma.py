@@ -17,7 +17,7 @@ class DualMovingAverage(TradingStrategy):
     def __init__(self, config):
         pass
 
-    def should_place_order(self, df, current_price):
+    def should_place_order(self, df, current_price: float, symbol: str) -> bool:
         sma_50 = df.iloc[-1]['sma_50']
         sma_200 = df.iloc[-1]['sma_200']
 

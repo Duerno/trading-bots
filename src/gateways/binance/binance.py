@@ -2,8 +2,8 @@ import time
 import logging
 import binance as bnb
 
-from ...domain.entities import trading_states
-from ...domain.exchanges import Exchange, utils
+from src.domain.entities import trading_states
+from src.domain.exchanges import Exchange, utils
 
 
 class Binance(Exchange):
@@ -31,7 +31,7 @@ class Binance(Exchange):
             return trading_states.TRADING
 
     def get_ongoing_trades(self):
-        return self.binance_client.get_open_orders()
+        return list(map(lambda order: order['symbol'], self.binance_client.get_open_orders()))
 
     def get_base_asset_balance(self):
         return float(self.binance_client.get_asset_balance(asset=self.base_asset)['free'])

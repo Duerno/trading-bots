@@ -5,3 +5,4 @@ PyYAML==5.4.1
 matplotlib==3.4.2
 requests==2.25.1
 python-binance==1.0.10
+redis==3.5.3

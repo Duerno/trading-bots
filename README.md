@@ -10,6 +10,7 @@ such as Binance.
 ### Requirements
 
 - Python ([installation](https://www.python.org/downloads/))
+- Docker ([installation](https://docs.docker.com/get-docker/))
 
 All other utilities are automatically downloaded in the configuration process.
 
@@ -20,6 +21,12 @@ the library dependencies:
 
 ```sh
 pip3 install -r requirements.txt
+```
+
+Then, start the project dependencies by running the command below:
+
+```sh
+docker compose up redis -d
 ```
 
 To check out the available bots and options, run the following command:
