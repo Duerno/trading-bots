@@ -12,10 +12,10 @@ class Redis(Cache):
             host=config['redis']['host'],
             port=config['redis']['port']
         )
-        self.hget('a', 'a')
 
     def hset(self, name: str, mapping: Dict):
-        self.redis_client.hset(name, mapping)
+        for k, v in mapping.items():
+            self.redis_client.hset(name, k, v)
 
     def hget(self, name: str, key: str) -> str:
         return self.redis_client.hget(name, key)

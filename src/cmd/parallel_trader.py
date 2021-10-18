@@ -52,7 +52,8 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     strategies: List[TradingStrategy] = []
     trading_strategies_list = str(trading_strategies).split(',')
     if 'period-max' in trading_strategies_list:
-        strategies.append(period_max.PeriodMax(config, exchange, cache))
+        strategies.append(period_max.PeriodMax(
+            config, exchange, cache, base_asset))
     if len(strategies) == 0:
         raise ValueError('No valid strategy found in: %s' % trading_strategies)
 

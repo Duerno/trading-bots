@@ -1,4 +1,5 @@
 from typing import Dict
+from pandas.core.frame import DataFrame
 
 
 class Exchange:
@@ -35,7 +36,10 @@ class Exchange:
     def get_current_prices(self):
         pass
 
-    def get_historical_klines(self, asset_to_trade: str, **kwargs):
+    def get_historical_klines(self, asset_to_trade: str, **kwargs) -> DataFrame:
+        pass
+
+    def get_klines(self, symbol: str, interval: str, limit: int = 1) -> Dict:
         pass
 
     def reset_client(self):

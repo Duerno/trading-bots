@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 
 from . import binance
 from src.domain.entities import trading_states
@@ -109,6 +110,9 @@ class BinanceSimulator(Exchange):
         begin = self.current_data_index - self.frame_size + 1
         end = self.current_data_index
         return self.historical_data.iloc[begin:end].copy()
+
+    def get_klines(self, symbol: str, interval: str, limit: int = 1) -> Dict:
+        return {}
 
     def reset_client(self):
         pass

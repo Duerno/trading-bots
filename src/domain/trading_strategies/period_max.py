@@ -18,13 +18,14 @@ class PeriodMax(TradingStrategy):
         period, the trend is up and the strategy would say to buy.
     """
 
-    def __init__(self, config, exchange: Exchange, cache: Cache):
+    def __init__(self, config, exchange: Exchange, cache: Cache, base_asset: str):
         self.cache = cache
         self.seconds_to_update_cache = config['periodMax']['secondsToUpdateCache']
+        self.base_asset = base_asset
 
         self.exchange = exchange
-        self.period_used = config['periodMax']['periodUsed']
-        self.cache_key_name = f'max-value-in-{self.period_used}'
+        self.period_used_in_days = config['periodMax']['periodUsedInDays']
+        self.cache_key_name = f'max-value-in-{self.period_used_in_days}-days'
 
         if config['periodMax']['cacheUpdater']['enabled']:
             threading.Thread(target=self.__cache_updater).start()
@@ -37,10 +38,52 @@ class PeriodMax(TradingStrategy):
 
     def __cache_updater(self):
         logging.info('Start running PeriodMax cache updater')
+        symbols_period_max = {}
+
+        try:
+            symbols_period_max = self.__build_symbols_period_max()
+        except Exception as e:
+            logging.error(f'Fail to update cache, error={e}')
+
         while True:
             try:
-                # TODO(duerno): implement this.
-                pass
+                self.cache.hset(self.cache_key_name, symbols_period_max)
+                logging.info('PeriodMax cache updated successfully')
+                time.sleep(self.seconds_to_update_cache)
+                symbols_period_max = self.__build_symbols_period_max()
             except Exception as e:
                 logging.error(f'Fail to update cache, error={e}')
-            time.sleep(self.seconds_to_update_cache)
+                time.sleep(self.seconds_to_update_cache)
+
+    def __build_symbols_period_max(self):
+        threads = []
+        symbols_period_max = {}
+
+        def update_max_for_symbol(symbol):
+            klines = self.exchange.get_klines(
+                symbol, '1d', self.period_used_in_days)
+            HIGH_POSITION = 2
+            max_for_symbol = max(list(map(lambda x: x[HIGH_POSITION], klines)))
+            symbols_period_max[symbol] = max_for_symbol  # must be thread-safe.
+
+        current_prices = self.exchange.get_current_prices()
+        for current_price in current_prices:
+            symbol = current_price['symbol']
+            if not symbol.endswith(self.base_asset):
+                continue
+            threads.append(threading.Thread(
+                target=update_max_for_symbol, kwargs={'symbol': symbol}))
+
+        # binance client start discarding connections for higher numbers.
+        MAX_SIMULTANEOUS_THREADS = 8
+
+        for i, t in enumerate(threads):
+            t.start()
+            if (i+1) % MAX_SIMULTANEOUS_THREADS == 0:
+                for j in range(MAX_SIMULTANEOUS_THREADS):
+                    threads[i-j].join()
+
+        for t in threads:
+            t.join()
+
+        return symbols_period_max

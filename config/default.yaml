@@ -22,7 +22,7 @@ bollinger:
   minRelativeBandsDelta: 0.04
 
 periodMax:
-  periodUsed: 1y
+  periodUsedInDays: 20
   secondsToUpdateCache: 600
   cacheUpdater:
     enabled: true
