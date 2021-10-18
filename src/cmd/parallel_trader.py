@@ -3,17 +3,15 @@ from typing import List, Dict
 import click
 import logging
 import time
-from matplotlib import pyplot as plt
 
-from ..domain.entities import trading_states
 from ..domain.exchanges import Exchange, fake
-from ..domain.trading_strategies import TradingStrategy, bollinger, dma, period_max
+from ..domain.trading_strategies import TradingStrategy, period_max
 from ..gateways.binance import binance, simulator
 
 
 @click.command()
 @click.option('--exchange-name', help='Define the exchange to be used. (options: binance|binance-simulator|fake)')
-@click.option('--trading-strategies', help='Define the trading strategies to be used, separated by comma. (options: bollinger|dma|period_max)')
+@click.option('--trading-strategies', help='Define the trading strategies to be used, separated by comma. (options: period-max)')
 @click.pass_context
 def parallel_trader(ctx, exchange_name, trading_strategies):
     """
@@ -48,11 +46,7 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     # initialize strategies.
     strategies: List[TradingStrategy] = []
     trading_strategies_list = str(trading_strategies).split(',')
-    if 'bollinger' in trading_strategies_list:
-        strategies.append(bollinger.Bollinger(config))
-    if 'dma' in trading_strategies_list:
-        strategies.append(dma.DualMovingAverage(config))
-    if 'period_max' in trading_strategies_list:
+    if 'period-max' in trading_strategies_list:
         strategies.append(period_max.PeriodMax(config))
     if len(strategies) == 0:
         raise ValueError('No valid strategy found in: %s' % trading_strategies)
@@ -88,30 +82,37 @@ class ParallelTrader:
     def __run_internal(self):
         logging.debug('Running Parallel Trader trading verification')
 
-        base_asset_balance = self.get_base_asset_balance()
-        if base_asset_balance < self.base_asset_amount_per_trade:
+        if self.exchange.get_base_asset_balance() < self.base_asset_amount_per_trade:
+            logging.debug(
+                f'Skipping trading verification: insufficient {self.base_asset} balance')
             return
 
-        # should return a list of asset names.
-        ongoing_trades = self.exchange.get_assets_in_trade()
+        ongoing_trades = self.exchange.get_ongoing_trades()
+        logging.debug(f'Ongoing trades: {ongoing_trades}')
 
-        # should return map of asset_name to price if asset_name is not passed as argument.
-        current_prices = self.get_current_price()
+        current_prices = self.exchange.get_current_prices()
+        for current_price in current_prices:
+            symbol = current_price['symbol']
+            price = float(current_price['price'])
 
-        for asset_name, price in current_prices:
-            if asset_name in ongoing_trades:
+            if not symbol.endswith(self.base_asset):
+                continue
+
+            if symbol in ongoing_trades:
                 continue
 
             should_place_order = False
             for strategy in self.strategies:
-                should_place_order = strategy.should_place_order(df, price)
+                # TODO(duerno): add symbol as a param to the should_place_order method of trading strategies.
+                should_place_order = strategy.should_place_order(None, price)
                 if should_place_order:
                     break
 
             if should_place_order:
-                buy_order, sell_order = self.exchange.place_order(
-                    asset_name,
-                    self.base_asset_usage_percentage,
-                    self.stop_loss_percentage,
-                    self.stop_gain_percentage)
-                self.__report_placed_order(buy_order, sell_order, klines)
+                logging.debug(f'Placing order for symbol {symbol}')
+                # self.exchange.place_order(
+                #     symbol.replace(self.base_asset, ''),
+                #     # TODO(duerno): make place_order work with amount instead of percentage.
+                #     self.base_asset_amount_per_trade,
+                #     self.stop_loss_percentage,
+                #     self.stop_gain_percentage)

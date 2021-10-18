@@ -17,5 +17,5 @@ class PeriodMax(TradingStrategy):
         pass
 
     def should_place_order(self, df, current_price):
-        # TODO
+        # TODO(duerno): implement this.
         return False

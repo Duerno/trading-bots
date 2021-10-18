@@ -110,6 +110,7 @@ class SerialTrader:
                     break
 
             if should_place_order:
+                pass
                 buy_order, sell_order = self.exchange.place_order(
                     self.asset_to_trade,
                     self.base_asset_usage_percentage,

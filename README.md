@@ -69,6 +69,18 @@ strategies.
 Given a pair of assets and the chosen trading strategies, the Serial Trader
 bot enters and exits trades serially, i.e. creating only one trade at a time.
 
+### Parallel Trader
+
+Parallel Trader is a bot for trading multiple asset pairs at the same time,
+always using the same base asset. It uses multiple trading strategies to
+identify gain opportunities.
+
+Given a base asset and the chosen trading strategies, the Parallel Trader
+bot checks for opportunities on any available asset pair considering the given
+base asset. If an opportunity is found and the user has enough resources, this
+bot starts a trade. It's important to notice that this bot only starts one
+trade at a time for each asset pair.
+
 ## Available Trading Strategies
 
 Useful information about the available trading strategies, how they work and
@@ -77,7 +89,19 @@ their specific settings.
 ### Bollinger
 
 Bollinger is a trading strategy that uses Bollinger Bands to decide when to
-enter a trade.
+enter a trade. Reference: [John Bollinger's Official Bollinger Band Website](https://www.bollingerbands.com).
+
+### Dual Moving Averages
+
+Dual Moving Average (DMA) is a trading strategy that uses two Simple Moving
+Averages (SMA) to decide when to enter a trade. This two SMA have different
+frame windows: one is shorter (uses 50 sample periods) and the other is larger
+(uses 200 sample periods). Reference: [Moving Average Strategies](https://analyzingalpha.com/moving-average#moving-average-strategies).
+
+### Period Max
+
+PeriodMax is a trading strategy that compares the current value with the
+maximum value of a given period to decide when to enter a trade.
 
 ## Available Exchanges
 

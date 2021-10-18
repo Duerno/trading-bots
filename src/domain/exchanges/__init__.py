@@ -12,9 +12,15 @@ class Exchange:
         pass
 
     def get_market_depth(self, asset_to_trade: str):
+        """
+        Returns the order book for the asset pair (base_asset, asset_to_trade).
+        """
         pass
 
     def get_trading_state(self, asset_to_trade: str):
+        pass
+
+    def get_ongoing_trades(self):
         pass
 
     def get_base_asset_balance(self):
@@ -24,6 +30,9 @@ class Exchange:
         pass
 
     def get_current_price(self, asset_to_trade: str):
+        pass
+
+    def get_current_prices(self):
         pass
 
     def get_historical_klines(self, asset_to_trade: str, **kwargs):

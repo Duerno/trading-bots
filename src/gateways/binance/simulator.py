@@ -15,6 +15,9 @@ class BinanceSimulator(Exchange):
         binance_exchange = binance.Binance(config, base_asset)
         self.tax = binance_exchange.tax_per_transaction
 
+        self.base_asset = base_asset
+        self.asset_to_trade = asset_to_trade
+
         interval_in_minutes = int(
             config['binanceSimulator']['intervalInMinutes'])
         num_intervals = int(config['binanceSimulator']['numberOfIntervals'])
@@ -59,6 +62,9 @@ class BinanceSimulator(Exchange):
 
         return trading_states.TRADING
 
+    def get_ongoing_trades(self):
+        return []
+
     def get_base_asset_balance(self):
         return self.balance
 
@@ -83,6 +89,14 @@ class BinanceSimulator(Exchange):
 
     def get_current_price(self, asset_to_trade: str):
         return float(self.historical_data.iloc[self.current_data_index]['close'])
+
+    def get_current_prices(self):
+        return [
+            {
+                "symbol": utils.build_symbol(self.asset_to_trade, self.base_asset),
+                "price": "40000.02"
+            }
+        ]
 
     def get_historical_klines(self, asset_to_trade: str):
         if self.current_data_index >= len(self.historical_data):

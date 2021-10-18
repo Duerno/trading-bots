@@ -30,15 +30,17 @@ class Binance(Exchange):
         else:
             return trading_states.TRADING
 
+    def get_ongoing_trades(self):
+        return self.binance_client.get_open_orders()
+
     def get_base_asset_balance(self):
-        return self.binance_client.get_asset_balance(asset=self.base_asset)
+        return float(self.binance_client.get_asset_balance(asset=self.base_asset)['free'])
 
     def place_order(self, asset_to_trade: str, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         base_asset_balance = self.get_base_asset_balance()
 
-        quantity_base_asset = float(
-            base_asset_balance['free']) * base_asset_usage_percentage / 100
+        quantity_base_asset = base_asset_balance * base_asset_usage_percentage / 100
 
         logging.debug('Buy order params ' +
                       f'quantity_base_asset={quantity_base_asset} ' +
@@ -92,6 +94,9 @@ class Binance(Exchange):
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         res = self.binance_client.get_all_tickers(symbol)
         return float(res['price'])
+
+    def get_current_prices(self):
+        return self.binance_client.get_all_tickers()
 
     def get_historical_klines(self, asset_to_trade: str, num_intervals=210):
         self.reset_client()  # avoid connection problems.
