@@ -6,13 +6,13 @@ from ...domain.exchanges import Exchange, utils
 
 
 class BinanceSimulator(Exchange):
-    def __init__(self, config, asset_to_trade, base_asset):
+    def __init__(self, config, base_asset, asset_to_trade='ADA'):
         self.order = None
         self.balance = 1.0
         self.losses = 0
         self.gains = 0
 
-        binance_exchange = binance.Binance(config, asset_to_trade, base_asset)
+        binance_exchange = binance.Binance(config, base_asset)
         self.tax = binance_exchange.tax_per_transaction
 
         interval_in_minutes = int(
@@ -20,17 +20,17 @@ class BinanceSimulator(Exchange):
         num_intervals = int(config['binanceSimulator']['numberOfIntervals'])
 
         raw_klines = binance_exchange.binance_client.get_historical_klines(
-            binance_exchange.symbol,
+            utils.build_symbol(asset_to_trade, base_asset),
             f'{interval_in_minutes}m',
             f'{interval_in_minutes * num_intervals} minutes ago UTC')
         self.historical_data = utils.parse_klines(raw_klines)
         self.frame_size = 210
         self.current_data_index = self.frame_size - 1
 
-    def get_market_depth(self):
+    def get_market_depth(self, asset_to_trade: str):
         return None
 
-    def get_trading_state(self):
+    def get_trading_state(self, asset_to_trade: str):
         self.current_data_index += 1
 
         if not self.order:
@@ -59,10 +59,10 @@ class BinanceSimulator(Exchange):
 
         return trading_states.TRADING
 
-    def get_balance(self):
+    def get_base_asset_balance(self):
         return self.balance
 
-    def place_order(self, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
+    def place_order(self, asset_to_trade: str, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
         logging.debug(f'Placing order data_index={self.current_data_index}')
 
         price = self.get_current_price()
@@ -81,10 +81,10 @@ class BinanceSimulator(Exchange):
 
         return None, None  # buy-order, sell-order
 
-    def get_current_price(self):
+    def get_current_price(self, asset_to_trade: str):
         return float(self.historical_data.iloc[self.current_data_index]['close'])
 
-    def get_historical_klines(self):
+    def get_historical_klines(self, asset_to_trade: str):
         if self.current_data_index >= len(self.historical_data):
             logging.warning('End of simulation ' +
                             f'losses={self.losses} ' +

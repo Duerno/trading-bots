@@ -1,7 +1,7 @@
 # Bots
 
 serialTrader:
-  cycleTime: 15
+  cycleTimeInSeconds: 15
   assetToTrade: ADA
   baseAsset: USDT
   baseAssetUsagePercentage: 100
@@ -9,10 +9,21 @@ serialTrader:
   stopGainPercentage: 2
   plotResults: false
 
+parallelTrader:
+  cycleTimeInSeconds: 15
+  baseAsset: USDT
+  baseAssetAmountPerTrade: 40
+  stopLossPercentage: 10
+  stopGainPercentage: 10
+
 # Trading Strategies
 
 bollinger:
   minRelativeBandsDelta: 0.04
+
+periodMax:
+  periodUsed: 1y
+  secondsToUpdateCache: 600
 
 # Exchanges
 

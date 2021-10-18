@@ -13,7 +13,7 @@ from ..gateways.binance import binance, simulator
 
 @click.command()
 @click.option('--exchange-name', help='Define the exchange to be used. (options: binance|binance-simulator|fake)')
-@click.option('--trading-strategies', help='Define the trading strategies to be used separated by comma. (options: bollinger|dma)')
+@click.option('--trading-strategies', help='Define the trading strategies to be used, separated by comma. (options: bollinger|dma)')
 @click.pass_context
 def serial_trader(ctx, exchange_name, trading_strategies):
     """
@@ -29,7 +29,7 @@ def serial_trader(ctx, exchange_name, trading_strategies):
         It has only two trading states (Pending and Trading) and the bot keeps
         indefinitely alternating between them.
 
-        * The Pending state means that there isn't any ongoing trades. When
+        * The Pending state means that there aren't any ongoing trades. When
           that's the case, the bot gets the historical data for the chosen
           asset and tries to enter a trade by checking all available trading
           strategies.
@@ -45,12 +45,12 @@ def serial_trader(ctx, exchange_name, trading_strategies):
     # initialize exchange.
     exchange: Exchange = None
     if exchange_name == 'binance':
-        exchange = binance.Binance(config, asset_to_trade, base_asset)
+        exchange = binance.Binance(config, base_asset)
     elif exchange_name == 'binance-simulator':
         exchange = simulator.BinanceSimulator(
-            config, asset_to_trade, base_asset)
+            config, base_asset, asset_to_trade)
     elif exchange_name == 'fake':
-        exchange = fake.FakeExchange(config, asset_to_trade, base_asset)
+        exchange = fake.FakeExchange(config, base_asset)
     else:
         raise ValueError('Invalid exchange name: %s' % exchange_name)
 
@@ -75,7 +75,8 @@ class SerialTrader:
         self.strategies = strategies
 
         botConfig = config['serialTrader']
-        self.cycle_time = botConfig['cycleTime']
+        self.cycle_time_in_seconds = botConfig['cycleTimeInSeconds']
+        self.asset_to_trade = botConfig['assetToTrade']
         self.plot_results = botConfig['plotResults']
         self.stop_loss_percentage = float(botConfig['stopLossPercentage'])
         self.stop_gain_percentage = float(botConfig['stopGainPercentage'])
@@ -90,17 +91,17 @@ class SerialTrader:
             except Exception as e:
                 logging.error(f'Fail to run Serial Trader error={e}')
                 self.exchange.reset_client()
-            time.sleep(self.cycle_time)
+            time.sleep(self.cycle_time_in_seconds)
 
     def __run_internal(self):
         logging.debug('Running Serial Trader trading verification')
 
-        state = self.exchange.get_trading_state()
+        state = self.exchange.get_trading_state(self.asset_to_trade)
 
         if state == trading_states.PENDING:
-            klines = self.exchange.get_historical_klines()
+            klines = self.exchange.get_historical_klines(self.asset_to_trade)
             df = self.__enrich_klines_with_indicators(klines)
-            price = self.exchange.get_current_price()
+            price = self.exchange.get_current_price(self.asset_to_trade)
 
             should_place_order = False
             for strategy in self.strategies:
@@ -110,6 +111,7 @@ class SerialTrader:
 
             if should_place_order:
                 buy_order, sell_order = self.exchange.place_order(
+                    self.asset_to_trade,
                     self.base_asset_usage_percentage,
                     self.stop_loss_percentage,
                     self.stop_gain_percentage)

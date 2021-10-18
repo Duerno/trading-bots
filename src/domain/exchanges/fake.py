@@ -4,10 +4,10 @@ from ..entities import trading_states
 
 
 class FakeExchange(Exchange):
-    def __init__(self, config, asset_to_trade, base_asset):
+    def __init__(self, config, base_asset):
         pass
 
-    def get_market_depth(self):
+    def get_market_depth(self, asset_to_trade: str):
         return {
             'lastUpdateId': 4589770863,
             'bids': [
@@ -20,7 +20,7 @@ class FakeExchange(Exchange):
             ]
         }
 
-    def get_trading_state(self):
+    def get_trading_state(self, asset_to_trade: str):
         return trading_states.PENDING
 
     def get_base_asset_balance(self):
@@ -30,7 +30,7 @@ class FakeExchange(Exchange):
             'locked': '0.00000000'
         }
 
-    def place_order(self, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
+    def place_order(self, asset_to_trade: str, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
         return {
             'symbol': 'ADAUSDT',
             'orderId': 1487106018,
@@ -56,10 +56,10 @@ class FakeExchange(Exchange):
             ]
         }
 
-    def get_current_price(self):
+    def get_current_price(self, asset_to_trade: str):
         return 47277.98
 
-    def get_historical_klines(self, **kwargs):
+    def get_historical_klines(self, asset_to_trade: str, **kwargs):
         raw_klines = [
             [
                 1621120500000,

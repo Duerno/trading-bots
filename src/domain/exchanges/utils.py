@@ -45,3 +45,7 @@ def fix_asset_precision(asset: str, precision: int = 5):
                 fixed_asset += char
             digit_count += 1
     return fixed_asset
+
+
+def build_symbol(asset_to_trade: str, base_asset: str):
+    return '{}{}'.format(asset_to_trade, base_asset)

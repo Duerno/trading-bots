@@ -7,7 +7,7 @@ from ...domain.exchanges import Exchange, utils
 
 
 class Binance(Exchange):
-    def __init__(self, config, asset_to_trade, base_asset):
+    def __init__(self, config, base_asset):
         self.tax_per_transaction = float(
             config['binance']['taxPerTransaction'])
         self.interval_in_minutes = int(
@@ -16,15 +16,15 @@ class Binance(Exchange):
         self.api_key = config['binance']['api']['key']
         self.api_secret = config['binance']['api']['secret']
         self.binance_client = bnb.Client(self.api_key, self.api_secret)
-
-        self.symbol = '{}{}'.format(asset_to_trade, base_asset)
         self.base_asset = base_asset
 
-    def get_market_depth(self):
-        return self.binance_client.get_order_book(symbol=self.symbol)
+    def get_market_depth(self, asset_to_trade: str):
+        symbol = utils.build_symbol(asset_to_trade, self.base_asset)
+        return self.binance_client.get_order_book(symbol=symbol)
 
-    def get_trading_state(self):
-        orders = self.binance_client.get_open_orders(symbol=self.symbol)
+    def get_trading_state(self, asset_to_trade: str):
+        symbol = utils.build_symbol(asset_to_trade, self.base_asset)
+        orders = self.binance_client.get_open_orders(symbol=symbol)
         if len(orders) == 0:
             return trading_states.PENDING
         else:
@@ -33,7 +33,8 @@ class Binance(Exchange):
     def get_base_asset_balance(self):
         return self.binance_client.get_asset_balance(asset=self.base_asset)
 
-    def place_order(self, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
+    def place_order(self, asset_to_trade: str, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
+        symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         base_asset_balance = self.get_base_asset_balance()
 
         quantity_base_asset = float(
@@ -44,7 +45,7 @@ class Binance(Exchange):
                       f'base_asset_balance={base_asset_balance}')
 
         buy_order = self.binance_client.order_market_buy(
-            symbol=self.symbol,
+            symbol=symbol,
             quoteOrderQty=utils.fix_asset_precision(quantity_base_asset, precision=4))
         logging.info('Buy order (market) executed successfully ' +
                      f'quantity_base_asset={quantity_base_asset} ' +
@@ -70,7 +71,7 @@ class Binance(Exchange):
                       f'gain_price={gain_price}')
 
         sell_order = self.binance_client.create_oco_order(
-            symbol=self.symbol,
+            symbol=symbol,
             side=bnb.Client.SIDE_SELL,
             quantity=utils.fix_asset_precision(
                 quantity_asset_to_trade, precision=4),
@@ -87,14 +88,15 @@ class Binance(Exchange):
 
         return buy_order, sell_order
 
-    def get_current_price(self):
-        res = self.binance_client.get_all_tickers(self.symbol)
+    def get_current_price(self, asset_to_trade: str):
+        symbol = utils.build_symbol(asset_to_trade, self.base_asset)
+        res = self.binance_client.get_all_tickers(symbol)
         return float(res['price'])
 
-    def get_historical_klines(self, num_intervals=210):
+    def get_historical_klines(self, asset_to_trade: str, num_intervals=210):
         self.reset_client()  # avoid connection problems.
         raw_klines = self.binance_client.get_historical_klines(
-            self.symbol,
+            utils.build_symbol(asset_to_trade, self.base_asset),
             f'{self.interval_in_minutes}m',
             f'{self.interval_in_minutes * num_intervals} minutes ago UTC')
         return utils.parse_klines(raw_klines)
