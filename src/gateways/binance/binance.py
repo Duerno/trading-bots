@@ -9,6 +9,16 @@ from src.domain.exchanges import Exchange, utils
 
 
 class Binance(Exchange):
+    """
+    This is a wrapper for the Binance Exchange.
+
+    Binance is the world's largest crypto exchange.
+    Official website: http://binance.com
+    Trade rules reference: https://www.binance.com/en/trade-rule
+    List of API errors: https://github.com/binance/binance-spot-api-docs/blob/master/errors.md
+    Tick size article: https://www.binance.com/en/support/announcement/9e1c939434c7453cae2e23ec6e43c283
+    """
+
     def __init__(self, config, base_asset):
         self.tax_per_transaction = float(
             config['binance']['taxPerTransaction'])
@@ -41,27 +51,29 @@ class Binance(Exchange):
     def place_order(self, asset_to_trade: str, base_asset_amount, stop_loss_percentage, stop_gain_percentage):
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
 
+        base_asset_amount = utils.fix_asset_precision(base_asset_amount)
+
         logging.debug('Buy order params ' +
                       f'base_asset_amount={base_asset_amount} ' +
                       f'asset_to_trade={asset_to_trade}')
 
         buy_order = self.binance_client.order_market_buy(
             symbol=symbol,
-            quoteOrderQty=utils.fix_asset_precision(base_asset_amount, precision=4))
+            quoteOrderQty=base_asset_amount)
         logging.info('Buy order (market) executed successfully ' +
                      f'base_asset_amount={base_asset_amount} ' +
                      f'buy_order={buy_order}')
 
         price_asset_to_trade = float(buy_order['fills'][0]['price'])
-        gain_price = price_asset_to_trade * \
-            (100 + stop_gain_percentage + 2*self.tax_per_transaction) / 100.0
-        loss_price = price_asset_to_trade * \
-            (100 - stop_loss_percentage + 2*self.tax_per_transaction) / 100.0
+        gain_price = utils.fix_asset_precision(
+            price_asset_to_trade * (100 + stop_gain_percentage + 2*self.tax_per_transaction) / 100.0)
+        loss_price = utils.fix_asset_precision(
+            price_asset_to_trade * (100 - stop_loss_percentage + 2*self.tax_per_transaction) / 100.0)
 
-        quantity_asset_to_trade = float(
-            buy_order['executedQty']) * (99.999 - self.tax_per_transaction) / 100.0
+        quantity_asset_to_trade = utils.fix_asset_precision(
+            float(buy_order['executedQty']) * (99.999 - self.tax_per_transaction) / 100.0)
 
-        # wait 1s to guarantee correct history order in Binance UI.
+        # wait 1s to guarantee correct execution order in the exchange.
         time.sleep(1)
 
         logging.debug('Sell order params ' +
@@ -70,21 +82,35 @@ class Binance(Exchange):
                       f'loss_price={loss_price} ' +
                       f'gain_price={gain_price}')
 
-        sell_order = self.binance_client.create_oco_order(
-            symbol=symbol,
-            side=bnb.Client.SIDE_SELL,
-            quantity=utils.fix_asset_precision(
-                quantity_asset_to_trade, precision=4),
-            price=utils.fix_asset_precision(gain_price, precision=4),
-            stopPrice=utils.fix_asset_precision(loss_price, precision=4),
-            stopLimitPrice=utils.fix_asset_precision(loss_price, precision=4),
-            stopLimitTimeInForce=bnb.Client.TIME_IN_FORCE_GTC)
+        sold = False
+        precision = 8
+        while not sold and precision >= 3:
+            try:
+                sell_order = self.binance_client.create_oco_order(
+                    symbol=symbol,
+                    side=bnb.Client.SIDE_SELL,
+                    quantity=utils.fix_asset_precision(
+                        quantity_asset_to_trade, precision=precision),
+                    price=utils.fix_asset_precision(
+                        gain_price, precision=precision),
+                    stopPrice=utils.fix_asset_precision(
+                        loss_price, precision=precision),
+                    stopLimitPrice=utils.fix_asset_precision(
+                        loss_price, precision=precision),
+                    stopLimitTimeInForce=bnb.Client.TIME_IN_FORCE_GTC)
+                sold = True
+            except:
+                logging.warn(
+                    f'Failed to sell {symbol} using precision={precision}, trying with {precision-1}.')
+                precision -= 1
+
         logging.info('Sell order (OCO) placed successfully ' +
                      f'quantity_asset_to_trade={quantity_asset_to_trade} ' +
                      f'price_asset_to_trade={price_asset_to_trade} ' +
                      f'loss_price={loss_price} ' +
                      f'gain_price={gain_price} ' +
-                     f'sell_order={sell_order}')
+                     f'sell_order={sell_order} ' +
+                     f'precision={precision}')
 
         return buy_order, sell_order
 
