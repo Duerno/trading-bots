@@ -1,6 +1,7 @@
 import time
 import logging
 import threading
+import distutils
 
 from src.domain.cache import Cache
 from src.domain.exchanges import Exchange
@@ -27,7 +28,7 @@ class PeriodMax(TradingStrategy):
         self.period_used_in_days = config['periodMax']['periodUsedInDays']
         self.cache_key_name = f'max-value-in-{self.period_used_in_days}-days'
 
-        if config['periodMax']['cacheUpdater']['enabled']:
+        if str(config['periodMax']['cacheUpdater']['enabled']).lower() == 'true':
             threading.Thread(target=self.__cache_updater).start()
 
     def should_place_order(self, df, current_price: float, symbol: str) -> bool:

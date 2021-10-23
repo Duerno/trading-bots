@@ -2,7 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=vim,visualstudiocode,macos,linux,dotenv,python
 
 ### dotenv ###
-.env
+.env*
 
 ### Linux ###
 *~
