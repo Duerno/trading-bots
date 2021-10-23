@@ -90,7 +90,8 @@ class ParallelTrader:
     def __run_internal(self):
         logging.debug('Running Parallel Trader trading verification')
 
-        if self.exchange.get_base_asset_balance() < self.base_asset_amount_per_trade:
+        balance = self.exchange.get_base_asset_balance()
+        if balance < self.base_asset_amount_per_trade:
             logging.debug(
                 f'Skipping trading verification: insufficient {self.base_asset} balance')
             return
@@ -124,8 +125,9 @@ class ParallelTrader:
                     self.base_asset_amount_per_trade,
                     self.stop_loss_percentage,
                     self.stop_gain_percentage)
+                balance -= self.base_asset_amount_per_trade
 
-            if self.exchange.get_base_asset_balance() < self.base_asset_amount_per_trade:
+            if balance < self.base_asset_amount_per_trade:
                 logging.debug(
                     f'Skipping verification for next currencies: insufficient {self.base_asset} balance')
                 return
