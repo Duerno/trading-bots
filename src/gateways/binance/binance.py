@@ -38,21 +38,18 @@ class Binance(Exchange):
     def get_base_asset_balance(self):
         return float(self.binance_client.get_asset_balance(asset=self.base_asset)['free'])
 
-    def place_order(self, asset_to_trade: str, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
+    def place_order(self, asset_to_trade: str, base_asset_amount, stop_loss_percentage, stop_gain_percentage):
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
-        base_asset_balance = self.get_base_asset_balance()
-
-        quantity_base_asset = base_asset_balance * base_asset_usage_percentage / 100
 
         logging.debug('Buy order params ' +
-                      f'quantity_base_asset={quantity_base_asset} ' +
-                      f'base_asset_balance={base_asset_balance}')
+                      f'base_asset_amount={base_asset_amount} ' +
+                      f'asset_to_trade={asset_to_trade}')
 
         buy_order = self.binance_client.order_market_buy(
             symbol=symbol,
-            quoteOrderQty=utils.fix_asset_precision(quantity_base_asset, precision=4))
+            quoteOrderQty=utils.fix_asset_precision(base_asset_amount, precision=4))
         logging.info('Buy order (market) executed successfully ' +
-                     f'quantity_base_asset={quantity_base_asset} ' +
+                     f'base_asset_amount={base_asset_amount} ' +
                      f'base_asset_balance={base_asset_balance} ' +
                      f'buy_order={buy_order}')
 

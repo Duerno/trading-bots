@@ -112,10 +112,11 @@ class SerialTrader:
                     break
 
             if should_place_order:
-                pass
+                base_asset_balance = self.exchange.get_base_asset_balance()
+                base_asset_amount = base_asset_balance * self.base_asset_usage_percentage / 100
                 buy_order, sell_order = self.exchange.place_order(
                     self.asset_to_trade,
-                    self.base_asset_usage_percentage,
+                    base_asset_amount,
                     self.stop_loss_percentage,
                     self.stop_gain_percentage)
                 self.__report_placed_order(buy_order, sell_order, klines)
