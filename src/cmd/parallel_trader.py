@@ -115,7 +115,8 @@ class ParallelTrader:
                     break
 
             if should_place_order:
-                logging.debug(f'Placing order for symbol {symbol}')
+                logging.debug(
+                    f'Placing order for symbol {symbol} (current price: {price})')
                 # self.exchange.place_order(
                 #     symbol.replace(self.base_asset, ''),
                 #     # TODO(duerno): make place_order work with amount instead of percentage.

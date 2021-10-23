@@ -31,10 +31,10 @@ class PeriodMax(TradingStrategy):
             threading.Thread(target=self.__cache_updater).start()
 
     def should_place_order(self, df, current_price: float, symbol: str) -> bool:
-        max_price_str = self.cache.hget(self.cache_key_name, symbol)
-        if max_price_str == None:
+        max_price = self.cache.hget(self.cache_key_name, symbol)
+        if max_price == None:
             return False
-        return current_price > float(max_price_str)
+        return current_price > float(max_price)
 
     def __cache_updater(self):
         logging.info('Start running PeriodMax cache updater')
@@ -63,7 +63,8 @@ class PeriodMax(TradingStrategy):
             klines = self.exchange.get_klines(
                 symbol, '1d', self.period_used_in_days)
             HIGH_POSITION = 2
-            max_for_symbol = max(list(map(lambda x: x[HIGH_POSITION], klines)))
+            max_for_symbol = max(
+                list(map(lambda x: float(x[HIGH_POSITION]), klines)))
             symbols_period_max[symbol] = max_for_symbol  # must be thread-safe.
 
         current_prices = self.exchange.get_current_prices()
