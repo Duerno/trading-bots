@@ -3,6 +3,7 @@ from typing import List, Dict
 import click
 import logging
 import time
+import traceback
 
 from src.domain.cache import Cache
 from src.domain.exchanges import Exchange, fake
@@ -81,7 +82,8 @@ class ParallelTrader:
             try:
                 self.__run_internal()
             except Exception as e:
-                logging.error(f'Fail to run Parallel Trader error={e}')
+                logging.error(
+                    f'Fail to run Parallel Trader error={e} {traceback.format_exc()}')
                 self.exchange.reset_client()
             time.sleep(self.cycle_time_in_seconds)
 
@@ -122,3 +124,8 @@ class ParallelTrader:
                     self.base_asset_amount_per_trade,
                     self.stop_loss_percentage,
                     self.stop_gain_percentage)
+
+            if self.exchange.get_base_asset_balance() < self.base_asset_amount_per_trade:
+                logging.debug(
+                    f'Skipping verification for next currencies: insufficient {self.base_asset} balance')
+                return

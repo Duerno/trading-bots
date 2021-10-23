@@ -26,11 +26,11 @@ def parse_klines(raw_klines):
     return klines
 
 
-def fix_asset_precision(asset: str, precision: int = 5):
+def fix_asset_precision(asset, precision: int = 5):
     fixed_asset = ''
     digit_count = 0
     dot_found = False
-    for char in asset:
+    for char in str(asset):
         if char == '.':
             dot_found = True
             if dot_found and digit_count >= precision:

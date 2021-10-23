@@ -24,7 +24,7 @@ class Exchange:
     def get_ongoing_trades(self):
         pass
 
-    def get_base_asset_balance(self):
+    def get_base_asset_balance(self) -> float:
         pass
 
     def place_order(self, asset_to_trade: str, **kwargs):

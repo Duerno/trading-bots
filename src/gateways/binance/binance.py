@@ -50,7 +50,6 @@ class Binance(Exchange):
             quoteOrderQty=utils.fix_asset_precision(base_asset_amount, precision=4))
         logging.info('Buy order (market) executed successfully ' +
                      f'base_asset_amount={base_asset_amount} ' +
-                     f'base_asset_balance={base_asset_balance} ' +
                      f'buy_order={buy_order}')
 
         price_asset_to_trade = float(buy_order['fills'][0]['price'])
@@ -76,9 +75,9 @@ class Binance(Exchange):
             side=bnb.Client.SIDE_SELL,
             quantity=utils.fix_asset_precision(
                 quantity_asset_to_trade, precision=4),
-            price=utils.fix_asset_precision(gain_price),
-            stopPrice=utils.fix_asset_precision(loss_price),
-            stopLimitPrice=utils.fix_asset_precision(loss_price),
+            price=utils.fix_asset_precision(gain_price, precision=4),
+            stopPrice=utils.fix_asset_precision(loss_price, precision=4),
+            stopLimitPrice=utils.fix_asset_precision(loss_price, precision=4),
             stopLimitTimeInForce=bnb.Client.TIME_IN_FORCE_GTC)
         logging.info('Sell order (OCO) placed successfully ' +
                      f'quantity_asset_to_trade={quantity_asset_to_trade} ' +
