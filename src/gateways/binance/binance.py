@@ -17,17 +17,18 @@ class Binance(Exchange):
     Trade rules reference: https://www.binance.com/en/trade-rule
     List of API errors: https://github.com/binance/binance-spot-api-docs/blob/master/errors.md
     Tick size article: https://www.binance.com/en/support/announcement/9e1c939434c7453cae2e23ec6e43c283
+    Symbol filters: https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#filters
     """
 
     def __init__(self, config, base_asset):
-        self.tax_per_transaction = float(
-            config['binance']['taxPerTransaction'])
-        self.interval_in_minutes = int(
-            config['binance']['intervalInMinutes'])
+        self.tax_per_transaction = float(config['binance']['taxPerTransaction'])
+        self.interval_in_minutes = int(config['binance']['intervalInMinutes'])
 
         self.api_key = config['binance']['api']['key']
         self.api_secret = config['binance']['api']['secret']
         self.binance_client = bnb.Client(self.api_key, self.api_secret)
+
+        self.exchange_info = self.__get_exchange_info()
         self.base_asset = base_asset
 
     def get_market_depth(self, asset_to_trade: str):
@@ -64,53 +65,41 @@ class Binance(Exchange):
                      f'base_asset_amount={base_asset_amount} ' +
                      f'buy_order={buy_order}')
 
-        price_asset_to_trade = float(buy_order['fills'][0]['price'])
+        price = float(buy_order['fills'][0]['price'])
         gain_price = utils.fix_asset_precision(
-            price_asset_to_trade * (100 + stop_gain_percentage + 2*self.tax_per_transaction) / 100.0)
+            price * (100 + stop_gain_percentage + 2*self.tax_per_transaction) / 100.0)
         loss_price = utils.fix_asset_precision(
-            price_asset_to_trade * (100 - stop_loss_percentage + 2*self.tax_per_transaction) / 100.0)
-
-        quantity_asset_to_trade = utils.fix_asset_precision(
+            price * (100 - stop_loss_percentage + 2*self.tax_per_transaction) / 100.0)
+        quantity = utils.fix_asset_precision(
             float(buy_order['executedQty']) * (99.999 - self.tax_per_transaction) / 100.0)
 
         # wait 1s to guarantee correct execution order in the exchange.
         time.sleep(1)
 
+        quantity, gain_price, loss_price = self.__fix_order_params(symbol, quantity, gain_price, loss_price)
+
         logging.debug('Sell order params ' +
-                      f'quantity_asset_to_trade={quantity_asset_to_trade} ' +
-                      f'price_asset_to_trade={price_asset_to_trade} ' +
+                      f'quantity={quantity} ' +
+                      f'price={price} ' +
                       f'loss_price={loss_price} ' +
-                      f'gain_price={gain_price}')
+                      f'gain_price={gain_price} ' +
+                      f'tick_size={self.exchange_info["symbols"][symbol]["filters"]["PRICE_FILTER"]["tickSize"]} ' +
+                      f'step_size={self.exchange_info["symbols"][symbol]["filters"]["LOT_SIZE"]["stepSize"]}')
 
-        sold = False
-        precision = 8
-        while not sold and precision >= 3:
-            try:
-                sell_order = self.binance_client.create_oco_order(
-                    symbol=symbol,
-                    side=bnb.Client.SIDE_SELL,
-                    quantity=utils.fix_asset_precision(
-                        quantity_asset_to_trade, precision=precision),
-                    price=utils.fix_asset_precision(
-                        gain_price, precision=precision),
-                    stopPrice=utils.fix_asset_precision(
-                        loss_price, precision=precision),
-                    stopLimitPrice=utils.fix_asset_precision(
-                        loss_price, precision=precision),
-                    stopLimitTimeInForce=bnb.Client.TIME_IN_FORCE_GTC)
-                sold = True
-            except:
-                logging.warn(
-                    f'Failed to sell {symbol} using precision={precision}, trying with {precision-1}.')
-                precision -= 1
-
+        sell_order = self.binance_client.create_oco_order(
+            symbol=symbol,
+            side=bnb.Client.SIDE_SELL,
+            quantity=quantity,
+            price=gain_price,
+            stopPrice=loss_price,
+            stopLimitPrice=loss_price,
+            stopLimitTimeInForce=bnb.Client.TIME_IN_FORCE_GTC)
         logging.info('Sell order (OCO) placed successfully ' +
-                     f'quantity_asset_to_trade={quantity_asset_to_trade} ' +
-                     f'price_asset_to_trade={price_asset_to_trade} ' +
+                     f'quantity={quantity} ' +
+                     f'price={price} ' +
                      f'loss_price={loss_price} ' +
                      f'gain_price={gain_price} ' +
-                     f'sell_order={sell_order} ' +
-                     f'precision={precision}')
+                     f'sell_order={sell_order}')
 
         return buy_order, sell_order
 
@@ -135,3 +124,30 @@ class Binance(Exchange):
 
     def reset_client(self):
         self.binance_client = bnb.Client(self.api_key, self.api_secret)
+
+    def __get_exchange_info(self):
+        info = self.binance_client.get_exchange_info()
+
+        symbols_info = {}
+        for symbol_info in info['symbols']:
+            symbols_info[symbol_info['symbol']] = symbol_info
+            filters = {}
+            for filter in symbols_info[symbol_info['symbol']]['filters']:
+                filters[filter['filterType']] = filter
+            symbols_info[symbol_info['symbol']]['filters'] = filters
+
+        info['symbols'] = symbols_info
+        return info
+
+    def __fix_order_params(self, symbol, quantity, gain_price, loss_price):
+        step_size = float(self.exchange_info['symbols'][symbol]['filters']['LOT_SIZE']['stepSize'])
+        quantity = float(quantity)
+        quantity = utils.fix_asset_precision(quantity - (quantity % step_size))
+
+        tick_size = float(self.exchange_info['symbols'][symbol]['filters']['PRICE_FILTER']['tickSize'])
+        gain_price = float(gain_price)
+        gain_price = utils.fix_asset_precision(gain_price - (gain_price % tick_size))
+        loss_price = float(loss_price)
+        loss_price = utils.fix_asset_precision(loss_price - (loss_price % tick_size))
+
+        return quantity, gain_price, loss_price

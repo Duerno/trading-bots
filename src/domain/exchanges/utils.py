@@ -26,7 +26,7 @@ def parse_klines(raw_klines):
     return klines
 
 
-def fix_asset_precision(asset, precision: int = 5):
+def fix_asset_precision(asset, precision: int = 8):
     fixed_asset = ''
     digit_count = 0
     dot_found = False

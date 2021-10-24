@@ -12,7 +12,7 @@ serialTrader:
 parallelTrader:
   cycleTimeInSeconds: 15
   baseAsset: USDT
-  baseAssetAmountPerTrade: 40
+  baseAssetAmountPerTrade: 12
   stopLossPercentage: 10
   stopGainPercentage: 10
 
