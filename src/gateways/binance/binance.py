@@ -51,16 +51,25 @@ class Binance(Exchange):
 
     def place_order(self, asset_to_trade: str, base_asset_amount, stop_loss_percentage, stop_gain_percentage):
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
-
         base_asset_amount = utils.fix_asset_precision(base_asset_amount)
+
+        err = self.__validate_order(symbol, base_asset_amount, stop_loss_percentage)
+        if err is not None:
+            logging.warn(f'Ignoring order request: {err}')
+            return
 
         logging.debug('Buy order params ' +
                       f'base_asset_amount={base_asset_amount} ' +
                       f'asset_to_trade={asset_to_trade}')
 
-        buy_order = self.binance_client.order_market_buy(
-            symbol=symbol,
-            quoteOrderQty=base_asset_amount)
+        try:
+            buy_order = self.binance_client.order_market_buy(
+                symbol=symbol,
+                quoteOrderQty=base_asset_amount)
+        except Exception as e:
+            logging.warn(f'Ignoring order request: {e}')
+            return
+
         logging.info('Buy order (market) executed successfully ' +
                      f'base_asset_amount={base_asset_amount} ' +
                      f'buy_order={buy_order}')
@@ -83,8 +92,8 @@ class Binance(Exchange):
                       f'price={price} ' +
                       f'loss_price={loss_price} ' +
                       f'gain_price={gain_price} ' +
-                      f'tick_size={self.exchange_info["symbols"][symbol]["filters"]["PRICE_FILTER"]["tickSize"]} ' +
-                      f'step_size={self.exchange_info["symbols"][symbol]["filters"]["LOT_SIZE"]["stepSize"]}')
+                      f'tick_size={self.__get_tick_size(symbol)} ' +
+                      f'step_size={self.__get_step_size(symbol)}')
 
         sell_order = self.binance_client.create_oco_order(
             symbol=symbol,
@@ -139,15 +148,44 @@ class Binance(Exchange):
         info['symbols'] = symbols_info
         return info
 
+    def __validate_order(self, symbol, quantity_in_base_asset, stop_loss_percentage):
+        current_price = float(self.binance_client.get_all_tickers(symbol)['price'])
+
+        step_size = self.__get_step_size(symbol)
+        quantity_in_base_asset = float(quantity_in_base_asset)
+        quantity = quantity_in_base_asset / current_price
+        truncated_quantity = float(utils.fix_asset_precision(quantity - (quantity % step_size)))
+
+        tick_size = self.__get_tick_size(symbol)
+        loss_price = current_price * (100 - stop_loss_percentage + 2*self.tax_per_transaction) / 100.0
+        truncated_loss_price = float(utils.fix_asset_precision(loss_price - (loss_price % tick_size)))
+
+        estimated_quantity_in_stop_loss = truncated_quantity * truncated_loss_price
+        min_notional = self.__get_min_notional(symbol)
+
+        if estimated_quantity_in_stop_loss < min_notional:
+            return 'quantity for stop loss is lower than min notional'
+
+        return None
+
     def __fix_order_params(self, symbol, quantity, gain_price, loss_price):
-        step_size = float(self.exchange_info['symbols'][symbol]['filters']['LOT_SIZE']['stepSize'])
+        step_size = self.__get_step_size(symbol)
         quantity = float(quantity)
         quantity = utils.fix_asset_precision(quantity - (quantity % step_size))
 
-        tick_size = float(self.exchange_info['symbols'][symbol]['filters']['PRICE_FILTER']['tickSize'])
+        tick_size = self.__get_tick_size(symbol)
         gain_price = float(gain_price)
         gain_price = utils.fix_asset_precision(gain_price - (gain_price % tick_size))
         loss_price = float(loss_price)
         loss_price = utils.fix_asset_precision(loss_price - (loss_price % tick_size))
 
         return quantity, gain_price, loss_price
+
+    def __get_step_size(self, symbol):
+        return float(self.exchange_info['symbols'][symbol]['filters']['LOT_SIZE']['stepSize'])
+
+    def __get_tick_size(self, symbol):
+        return float(self.exchange_info['symbols'][symbol]['filters']['PRICE_FILTER']['tickSize'])
+
+    def __get_min_notional(self, symbol):
+        return float(self.exchange_info['symbols'][symbol]['filters']['MIN_NOTIONAL']['minNotional'])
