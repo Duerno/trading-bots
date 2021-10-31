@@ -8,11 +8,12 @@ from matplotlib import pyplot as plt
 from src.domain.entities import trading_states
 from src.domain.exchanges import Exchange, fake, utils
 from src.domain.trading_strategies import TradingStrategy, bollinger, dma
-from src.gateways.binance import binance, simulator
+from src.gateways.binance import binance
+from src.gateways.backtest import backtest
 
 
 @click.command()
-@click.option('--exchange-name', help='Define the exchange to be used. (options: binance|binance-simulator|fake)')
+@click.option('--exchange-name', help='Define the exchange to be used. (options: binance|backtest|fake)')
 @click.option('--trading-strategies', help='Define the trading strategies to be used, separated by comma. (options: bollinger|dma)')
 @click.pass_context
 def serial_trader(ctx, exchange_name, trading_strategies):
@@ -46,9 +47,8 @@ def serial_trader(ctx, exchange_name, trading_strategies):
     exchange: Exchange = None
     if exchange_name == 'binance':
         exchange = binance.Binance(config, base_asset)
-    elif exchange_name == 'binance-simulator':
-        exchange = simulator.BinanceSimulator(
-            config, base_asset, asset_to_trade)
+    elif exchange_name == 'backtest':
+        exchange = backtest.Backtest(config, base_asset, asset_to_trade)
     elif exchange_name == 'fake':
         exchange = fake.FakeExchange(config, base_asset)
     else:
@@ -122,7 +122,7 @@ class SerialTrader:
                 self.__report_placed_order(buy_order, sell_order, klines)
 
         elif state == trading_states.TRADING:
-            logging.info('Waiting order to complete')
+            logging.debug('Waiting order to complete')
             return
 
     def __enrich_klines_with_indicators(self, klines):

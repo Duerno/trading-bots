@@ -21,9 +21,9 @@ class DualMovingAverage(TradingStrategy):
         sma_50 = df.iloc[-1]['sma_50']
         sma_200 = df.iloc[-1]['sma_200']
 
-        logging.info('DMA strategy params computed ' +
-                     f'price={current_price} ' +
-                     f'sma_50={sma_50} ' +
-                     f'sma_200={sma_200} ')
+        logging.debug('DMA strategy params computed ' +
+                      f'price={current_price} ' +
+                      f'sma_50={sma_50} ' +
+                      f'sma_200={sma_200} ')
 
         return sma_50 > sma_200

@@ -1,12 +1,12 @@
 import logging
 from typing import Dict
 
-from . import binance
+from src.gateways.binance import binance
 from src.domain.entities import trading_states
 from src.domain.exchanges import Exchange, utils
 
 
-class BinanceSimulator(Exchange):
+class Backtest(Exchange):
     def __init__(self, config, base_asset, asset_to_trade='ADA'):
         self.order = None
         self.balance = 1.0
@@ -19,8 +19,7 @@ class BinanceSimulator(Exchange):
         self.base_asset = base_asset
         self.asset_to_trade = asset_to_trade
 
-        interval_in_minutes = int(
-            config['binanceSimulator']['intervalInMinutes'])
+        interval_in_minutes = int(config['binanceSimulator']['intervalInMinutes'])
         num_intervals = int(config['binanceSimulator']['numberOfIntervals'])
 
         raw_klines = binance_exchange.binance_client.get_historical_klines(
@@ -37,10 +36,14 @@ class BinanceSimulator(Exchange):
     def get_trading_state(self, asset_to_trade: str):
         self.current_data_index += 1
 
+        # Ignore last trade when the simulation ends.
+        if self.current_data_index >= len(self.historical_data):
+            return trading_states.PENDING
+
         if not self.order:
             return trading_states.PENDING
 
-        current_price = self.get_current_price()
+        current_price = self.get_current_price(asset_to_trade)
         buy_price = self.order['price']
         gain_price = self.order['gain_price']
         loss_price = self.order['loss_price']
@@ -72,7 +75,7 @@ class BinanceSimulator(Exchange):
     def place_order(self, asset_to_trade: str, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
         logging.debug(f'Placing order data_index={self.current_data_index}')
 
-        price = self.get_current_price()
+        price = self.get_current_price(asset_to_trade)
         gain_price = price * (100 + stop_gain_percentage + 2*self.tax) / 100.0
         loss_price = price * (100 - stop_loss_percentage + 2*self.tax) / 100.0
         quantity = self.balance * \

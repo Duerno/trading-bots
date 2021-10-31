@@ -6,14 +6,14 @@ import time
 import traceback
 
 from src.domain.cache import Cache
-from src.domain.exchanges import Exchange, fake
+from src.domain.exchanges import Exchange
 from src.domain.trading_strategies import TradingStrategy, period_max
 from src.gateways.redis import redis
-from src.gateways.binance import binance, simulator
+from src.gateways.binance import binance
 
 
 @click.command()
-@click.option('--exchange-name', help='Define the exchange to be used. (options: binance|binance-simulator|fake)')
+@click.option('--exchange-name', help='Define the exchange to be used. (options: binance)')
 @click.option('--trading-strategies', help='Define the trading strategies to be used, separated by comma. (options: period-max)')
 @click.pass_context
 def parallel_trader(ctx, exchange_name, trading_strategies):
@@ -39,10 +39,6 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     exchange: Exchange = None
     if exchange_name == 'binance':
         exchange = binance.Binance(config, base_asset)
-    elif exchange_name == 'binance-simulator':
-        exchange = simulator.BinanceSimulator(config, base_asset)
-    elif exchange_name == 'fake':
-        exchange = fake.FakeExchange(config, base_asset)
     else:
         raise ValueError('Invalid exchange name: %s' % exchange_name)
 

@@ -27,11 +27,11 @@ class Bollinger(TradingStrategy):
         bollinger_delta = bollinger_up - bollinger_low
         min_bollinger_delta = self.min_relative_bands_delta * df.iloc[-1]['tp']
 
-        logging.info('Bollinger strategy params computed ' +
-                     f'price={current_price} ' +
-                     f'bbup={bollinger_up} ' +
-                     f'bblow={bollinger_low} ' +
-                     f'bbdelta={bollinger_delta} ' +
-                     f'min_bbdelta={min_bollinger_delta}')
+        logging.debug('Bollinger strategy params computed ' +
+                      f'price={current_price} ' +
+                      f'bbup={bollinger_up} ' +
+                      f'bblow={bollinger_low} ' +
+                      f'bbdelta={bollinger_delta} ' +
+                      f'min_bbdelta={min_bollinger_delta}')
 
         return current_price < bollinger_low and bollinger_delta > min_bollinger_delta
