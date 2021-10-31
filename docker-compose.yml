@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  worker-parallel:
+  app-parallel:
     build: .
     env_file:
       - ./.env
@@ -9,7 +9,7 @@ services:
       - .:/app
     command: python main.py --log-level=debug parallel-trader --exchange-name=binance --trading-strategies=period-max
 
-  worker-serial:
+  app-serial:
     build: .
     env_file:
       - ./.env
