@@ -1,43 +1,36 @@
 import logging
 from typing import Dict
 
-from src.gateways.binance import binance
+from src.gateways.backtest.historical_data_manager import HistoricalDataManager
 from src.domain.entities import trading_states
 from src.domain.exchanges import Exchange, utils
 
 
 class Backtest(Exchange):
-    def __init__(self, config, base_asset, asset_to_trade='ADA'):
+    def __init__(self, config, base_asset, assets_to_trade=None):
         self.order = None
         self.balance = 1.0
         self.losses = 0
         self.gains = 0
 
-        binance_exchange = binance.Binance(config, base_asset)
-        self.tax = binance_exchange.tax_per_transaction
-
         self.base_asset = base_asset
-        self.asset_to_trade = asset_to_trade
+        self.tax = float(config['backtest']['taxPerTransaction'])
 
-        interval_in_minutes = int(config['binanceSimulator']['intervalInMinutes'])
-        num_intervals = int(config['binanceSimulator']['numberOfIntervals'])
-
-        raw_klines = binance_exchange.binance_client.get_historical_klines(
-            utils.build_symbol(asset_to_trade, base_asset),
-            f'{interval_in_minutes}m',
-            f'{interval_in_minutes * num_intervals} minutes ago UTC')
-        self.historical_data = utils.parse_klines(raw_klines)
-        self.frame_size = 210
-        self.current_data_index = self.frame_size - 1
+        self.frame_size = int(config['backtest']['frameSize'])
+        self.current_data_index = self.frame_size - 1  # first index.
+        self.historical_data = HistoricalDataManager.get_historical_data(config, base_asset, assets_to_trade)
 
     def get_market_depth(self, asset_to_trade: str):
-        return None
+        return None  # not supported yet.
 
     def get_trading_state(self, asset_to_trade: str):
+        symbol = utils.build_symbol(asset_to_trade, self.base_asset)
+        data = self.historical_data[symbol]
+
         self.current_data_index += 1
 
         # Ignore last trade when the simulation ends.
-        if self.current_data_index >= len(self.historical_data):
+        if self.current_data_index >= len(data):
             return trading_states.PENDING
 
         if not self.order:
@@ -92,18 +85,24 @@ class Backtest(Exchange):
         return None, None  # buy-order, sell-order
 
     def get_current_price(self, asset_to_trade: str):
-        return float(self.historical_data.iloc[self.current_data_index]['close'])
+        symbol = utils.build_symbol(asset_to_trade, self.base_asset)
+        data = self.historical_data[symbol]
+        return float(data.iloc[self.current_data_index]['close'])
 
     def get_current_prices(self):
-        return [
-            {
-                "symbol": utils.build_symbol(self.asset_to_trade, self.base_asset),
-                "price": "40000.02"
-            }
-        ]
+        prices = []
+        for symbol in self.historical_data:
+            prices.append({
+                'symbol': symbol,
+                'price': float(self.historical_data[symbol].iloc[self.current_data_index]['close'])
+            })
+        return prices
 
     def get_historical_klines(self, asset_to_trade: str):
-        if self.current_data_index >= len(self.historical_data):
+        symbol = utils.build_symbol(asset_to_trade, self.base_asset)
+        data = self.historical_data[symbol]
+
+        if self.current_data_index >= len(data):
             logging.warning('End of simulation ' +
                             f'losses={self.losses} ' +
                             f'gains={self.gains} ' +
@@ -112,7 +111,7 @@ class Backtest(Exchange):
 
         begin = self.current_data_index - self.frame_size + 1
         end = self.current_data_index
-        return self.historical_data.iloc[begin:end].copy()
+        return data.iloc[begin:end].copy()
 
     def get_klines(self, symbol: str, interval: str, limit: int = 1) -> Dict:
         return {}

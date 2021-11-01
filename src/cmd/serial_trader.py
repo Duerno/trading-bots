@@ -48,7 +48,7 @@ def serial_trader(ctx, exchange_name, trading_strategies):
     if exchange_name == 'binance':
         exchange = binance.Binance(config, base_asset)
     elif exchange_name == 'backtest':
-        exchange = backtest.Backtest(config, base_asset, asset_to_trade)
+        exchange = backtest.Backtest(config, base_asset, [asset_to_trade])
     elif exchange_name == 'fake':
         exchange = fake.FakeExchange(config, base_asset)
     else:
