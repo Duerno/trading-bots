@@ -36,9 +36,11 @@ binance:
     key: "sample-api-key"
     secret: "sample-api-secret"
 
-binanceSimulator:
+backtest:
   intervalInMinutes: 3
   numberOfIntervals: 20000
+  frameSize: 210
+  taxPerTransaction: 0.075
 
 # Other dependencies
 

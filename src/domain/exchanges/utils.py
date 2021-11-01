@@ -18,9 +18,7 @@ def parse_klines(raw_klines):
             can_be_ignored
         '''.split(), dtype=numpy.float64)
 
-    klines['time'] = pandas.to_datetime(
-        klines['open_time'].apply(lambda x: int(x)),
-        unit='ms')
+    klines['time'] = pandas.to_datetime(klines['open_time'].apply(lambda x: int(x)), unit='ms')
     klines = klines.set_index('time')
 
     return klines
