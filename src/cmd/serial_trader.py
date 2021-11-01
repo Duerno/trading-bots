@@ -5,7 +5,6 @@ import logging
 import time
 from matplotlib import pyplot as plt
 
-from src.domain.entities import trading_states
 from src.domain.exchanges import Exchange, fake, utils
 from src.domain.trading_strategies import TradingStrategy, bollinger, dma
 from src.gateways.binance import binance
@@ -81,8 +80,7 @@ class SerialTrader:
         self.plot_results = botConfig['plotResults']
         self.stop_loss_percentage = float(botConfig['stopLossPercentage'])
         self.stop_gain_percentage = float(botConfig['stopGainPercentage'])
-        self.base_asset_usage_percentage = float(
-            botConfig['baseAssetUsagePercentage'])
+        self.base_asset_usage_percentage = float(botConfig['baseAssetUsagePercentage'])
 
     def run(self):
         logging.info('Start running Serial Trader bot')
@@ -97,9 +95,10 @@ class SerialTrader:
     def __run_internal(self):
         logging.debug('Running Serial Trader trading verification')
 
-        state = self.exchange.get_trading_state(self.asset_to_trade)
+        symbol = utils.build_symbol(self.asset_to_trade, self.base_asset)
+        ongoing_trades = self.exchange.get_ongoing_trades()
 
-        if state == trading_states.PENDING:
+        if symbol not in ongoing_trades:
             klines = self.exchange.get_historical_klines(self.asset_to_trade)
             df = self.__enrich_klines_with_indicators(klines)
             price = self.exchange.get_current_price(self.asset_to_trade)
@@ -121,7 +120,7 @@ class SerialTrader:
                     self.stop_gain_percentage)
                 self.__report_placed_order(buy_order, sell_order, klines)
 
-        elif state == trading_states.TRADING:
+        else:
             logging.debug('Waiting order to complete')
             return
 

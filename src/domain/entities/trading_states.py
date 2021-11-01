@@ -1,2 +1,0 @@
-PENDING = 1
-TRADING = 2

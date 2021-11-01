@@ -4,7 +4,6 @@ import binance as bnb
 from typing import Dict
 from pandas.core.frame import DataFrame
 
-from src.domain.entities import trading_states
 from src.domain.exchanges import Exchange, utils
 
 
@@ -34,14 +33,6 @@ class Binance(Exchange):
     def get_market_depth(self, asset_to_trade: str):
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         return self.binance_client.get_order_book(symbol=symbol)
-
-    def get_trading_state(self, asset_to_trade: str):
-        symbol = utils.build_symbol(asset_to_trade, self.base_asset)
-        orders = self.binance_client.get_open_orders(symbol=symbol)
-        if len(orders) == 0:
-            return trading_states.PENDING
-        else:
-            return trading_states.TRADING
 
     def get_ongoing_trades(self):
         return list(map(lambda order: order['symbol'], self.binance_client.get_open_orders()))

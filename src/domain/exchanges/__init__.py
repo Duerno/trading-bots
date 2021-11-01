@@ -18,16 +18,13 @@ class Exchange:
         """
         pass
 
-    def get_trading_state(self, asset_to_trade: str):
-        pass
-
     def get_ongoing_trades(self):
         pass
 
     def get_base_asset_balance(self) -> float:
         pass
 
-    def place_order(self, asset_to_trade: str, **kwargs):
+    def place_order(self, asset_to_trade: str, base_asset_amount, stop_loss_percentage, stop_gain_percentage):
         pass
 
     def get_current_price(self, asset_to_trade: str):

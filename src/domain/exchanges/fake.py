@@ -2,8 +2,6 @@ from typing import Dict
 from . import Exchange
 from . import utils
 
-from src.domain.entities import trading_states
-
 
 class FakeExchange(Exchange):
     def __init__(self, config, base_asset):
@@ -23,9 +21,6 @@ class FakeExchange(Exchange):
             ]
         }
 
-    def get_trading_state(self, asset_to_trade: str):
-        return trading_states.PENDING
-
     def get_ongoing_trades(self):
         return []
 
@@ -37,7 +32,7 @@ class FakeExchange(Exchange):
         # }
         return 136.76918981
 
-    def place_order(self, asset_to_trade: str, base_asset_usage_percentage, stop_loss_percentage, stop_gain_percentage):
+    def place_order(self, asset_to_trade: str, base_asset_amount, stop_loss_percentage, stop_gain_percentage):
         return {
             'symbol': 'ADAUSDT',
             'orderId': 1487106018,

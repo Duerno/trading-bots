@@ -61,11 +61,9 @@ class PeriodMax(TradingStrategy):
         symbols_period_max = {}
 
         def update_max_for_symbol(symbol):
-            klines = self.exchange.get_klines(
-                symbol, '1d', self.period_used_in_days)
+            klines = self.exchange.get_klines(symbol, '1d', self.period_used_in_days)
             HIGH_POSITION = 2
-            max_for_symbol = max(
-                list(map(lambda x: float(x[HIGH_POSITION]), klines)))
+            max_for_symbol = max(list(map(lambda x: float(x[HIGH_POSITION]), klines)))
             symbols_period_max[symbol] = max_for_symbol  # must be thread-safe.
 
         current_prices = self.exchange.get_current_prices()
