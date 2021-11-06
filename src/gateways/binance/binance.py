@@ -1,8 +1,7 @@
 import time
 import logging
 import binance as bnb
-from typing import Dict
-from pandas.core.frame import DataFrame
+from typing import Dict, Union
 
 from src.domain.exchanges import Exchange, utils
 
@@ -21,7 +20,6 @@ class Binance(Exchange):
 
     def __init__(self, config, base_asset):
         self.tax_per_transaction = float(config['binance']['taxPerTransaction'])
-        self.interval_in_minutes = int(config['binance']['intervalInMinutes'])
 
         self.api_key = config['binance']['api']['key']
         self.api_secret = config['binance']['api']['secret']
@@ -47,7 +45,7 @@ class Binance(Exchange):
         err = self.__validate_order(symbol, base_asset_amount, stop_loss_percentage)
         if err is not None:
             logging.warn(f'Ignoring order request: {err}')
-            return
+            return None, None
 
         logging.debug('Buy order params ' +
                       f'base_asset_amount={base_asset_amount} ' +
@@ -59,23 +57,19 @@ class Binance(Exchange):
                 quoteOrderQty=base_asset_amount)
         except Exception as e:
             logging.warn(f'Ignoring order request: {e}')
-            return
+            return None, None
 
         logging.info('Buy order (market) executed successfully ' +
                      f'base_asset_amount={base_asset_amount} ' +
                      f'buy_order={buy_order}')
 
-        price = float(buy_order['fills'][0]['price'])
-        gain_price = utils.fix_asset_precision(
-            price * (100 + stop_gain_percentage + 2*self.tax_per_transaction) / 100.0)
-        loss_price = utils.fix_asset_precision(
-            price * (100 - stop_loss_percentage + 2*self.tax_per_transaction) / 100.0)
-        quantity = utils.fix_asset_precision(
-            float(buy_order['executedQty']) * (99.999 - self.tax_per_transaction) / 100.0)
-
         # wait 1s to guarantee correct execution order in the exchange.
         time.sleep(1)
 
+        price = float(buy_order['fills'][0]['price'])
+        gain_price = price * (100 + stop_gain_percentage + 2*self.tax_per_transaction) / 100.0
+        loss_price = price * (100 - stop_loss_percentage + 2*self.tax_per_transaction) / 100.0
+        quantity = float(buy_order['executedQty']) * (99.999 - self.tax_per_transaction) / 100.0
         quantity, gain_price, loss_price = self.__fix_order_params(symbol, quantity, gain_price, loss_price)
 
         logging.debug('Sell order params ' +
@@ -94,6 +88,7 @@ class Binance(Exchange):
             stopPrice=loss_price,
             stopLimitPrice=loss_price,
             stopLimitTimeInForce=bnb.Client.TIME_IN_FORCE_GTC)
+
         logging.info('Sell order (OCO) placed successfully ' +
                      f'quantity={quantity} ' +
                      f'price={price} ' +
@@ -111,16 +106,12 @@ class Binance(Exchange):
     def get_current_prices(self):
         return self.binance_client.get_all_tickers()
 
-    def get_historical_klines(self, asset_to_trade: str, num_intervals=210) -> DataFrame:
-        self.reset_client()  # avoid connection problems.
-        raw_klines = self.binance_client.get_historical_klines(
+    def get_historical_klines(self, asset_to_trade: str, approx_interval_in_minutes: int, num_intervals: int) -> Dict:
+        interval, unit = self.__get_valid_klines_interval(approx_interval_in_minutes)
+        return self.binance_client.get_historical_klines(
             utils.build_symbol(asset_to_trade, self.base_asset),
-            f'{self.interval_in_minutes}m',
-            f'{self.interval_in_minutes * num_intervals} minutes ago UTC')
-        return utils.parse_klines(raw_klines)
-
-    def get_klines(self, symbol: str, interval: str, limit: int = 1) -> Dict:
-        return self.binance_client.get_klines(symbol=symbol, interval=interval, limit=limit)
+            f'{interval}{unit}',
+            f'{interval * num_intervals} {self.__get_time_unit_in_full(unit)} ago UTC')
 
     def reset_client(self):
         self.binance_client = bnb.Client(self.api_key, self.api_secret)
@@ -180,3 +171,38 @@ class Binance(Exchange):
 
     def __get_min_notional(self, symbol):
         return float(self.exchange_info['symbols'][symbol]['filters']['MIN_NOTIONAL']['minNotional'])
+
+    def __get_valid_klines_interval(self, target_interval_in_minutes: int) -> Union[int, str]:
+        # Reference: https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#enum-definitions
+        valid_intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
+
+        def interval_in_minutes(interval: str) -> int:
+            minutes_per_unit = {
+                'm': 1,
+                'h': 60,
+                'd': 60 * 24,
+                'w': 60 * 24 * 7,
+            }
+            return int(interval[:-1]) * minutes_per_unit[interval[-1]]
+
+        # get nearest interval.
+        nearest_interval_index = 0
+        while nearest_interval_index < len(valid_intervals)-1:
+            curr_interval_in_minutes = interval_in_minutes(valid_intervals[nearest_interval_index])
+            next_interval_in_minutes = interval_in_minutes(valid_intervals[nearest_interval_index+1])
+            if abs(next_interval_in_minutes - target_interval_in_minutes) > abs(curr_interval_in_minutes - target_interval_in_minutes):
+                break
+            nearest_interval_index += 1
+
+        # split interval in value and unit.
+        nearest_interval = valid_intervals[nearest_interval_index]
+        return int(nearest_interval[:-1]), nearest_interval[-1]
+
+    def __get_time_unit_in_full(self, unit: str) -> str:
+        unit_in_full = {
+            'm': 'minutes',
+            'h': 'hours',
+            'd': 'days',
+            'w': 'weeks',
+        }
+        return unit_in_full[unit]

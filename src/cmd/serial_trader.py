@@ -39,15 +39,16 @@ def serial_trader(ctx, exchange_name, trading_strategies):
     """
     config = ctx.obj['config']
 
-    asset_to_trade = config['serialTrader']['assetToTrade']
     base_asset = config['serialTrader']['baseAsset']
+    asset_to_trade = config['serialTrader']['assetToTrade']
+    candle_size_in_minutes = config['serialTrader']['candleSizeInMinutes']
 
     # initialize exchange.
     exchange: Exchange = None
     if exchange_name == 'binance':
         exchange = binance.Binance(config, base_asset)
     elif exchange_name == 'backtest':
-        exchange = backtest.Backtest(config, base_asset, [asset_to_trade])
+        exchange = backtest.Backtest(config, candle_size_in_minutes, base_asset, [asset_to_trade])
     elif exchange_name == 'fake':
         exchange = fake.FakeExchange(config, base_asset)
     else:
@@ -77,6 +78,8 @@ class SerialTrader:
         self.cycle_time_in_seconds = botConfig['cycleTimeInSeconds']
         self.asset_to_trade = botConfig['assetToTrade']
         self.base_asset = botConfig['baseAsset']
+        self.candle_size_in_minutes = botConfig['candleSizeInMinutes']
+        self.candles_to_retrieve_per_cycle = botConfig['candlesToRetrievePerCycle']
         self.plot_results = botConfig['plotResults']
         self.stop_loss_percentage = float(botConfig['stopLossPercentage'])
         self.stop_gain_percentage = float(botConfig['stopGainPercentage'])
@@ -99,7 +102,11 @@ class SerialTrader:
         ongoing_trades = self.exchange.get_ongoing_trades()
 
         if symbol not in ongoing_trades:
-            klines = self.exchange.get_historical_klines(self.asset_to_trade)
+            raw_klines = self.exchange.get_historical_klines(
+                self.asset_to_trade,
+                self.candle_size_in_minutes,
+                self.candles_to_retrieve_per_cycle)
+            klines = utils.parse_klines(raw_klines)
             df = self.__enrich_klines_with_indicators(klines)
             price = self.exchange.get_current_price(self.asset_to_trade)
 
@@ -135,7 +142,7 @@ class SerialTrader:
         return klines
 
     def __report_placed_order(self, buy_order, sell_order, klines):
-        if self.plot_results:
+        if buy_order and sell_order and self.plot_results:
             # mplfinance.plot(klines[['open', 'high', 'low', 'close', 'volume']], type='candle', ax=ax)
             plt.plot(klines[['close', 'bollinger_low', 'bollinger_up']])
             plt.show()

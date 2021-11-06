@@ -33,7 +33,9 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
         TODO
     """
     config = ctx.obj['config']
+
     base_asset = config['parallelTrader']['baseAsset']
+    candle_size_in_minutes = int(config['parallelTrader']['candleSizeInMinutes'])
 
     # initialize exchange.
     exchange: Exchange = None
@@ -49,8 +51,7 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     strategies: List[TradingStrategy] = []
     trading_strategies_list = str(trading_strategies).split(',')
     if 'period-max' in trading_strategies_list:
-        strategies.append(period_max.PeriodMax(
-            config, exchange, cache, base_asset))
+        strategies.append(period_max.PeriodMax(config, exchange, cache, base_asset, candle_size_in_minutes))
     if len(strategies) == 0:
         raise ValueError('No valid strategy found in: %s' % trading_strategies)
 

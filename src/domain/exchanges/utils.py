@@ -1,6 +1,16 @@
 import numpy
 import pandas
 
+OPEN_TIME_INDEX = 0
+OPEN_INDEX = 1
+HIGH_INDEX = 2
+LOW_INDEX = 3
+CLOSE_INDEX = 4
+VOLUME_INDEX = 5
+CLOSE_TIME_INDEX = 6
+QUOTE_VOLUME_INDEX = 7
+NUM_TRADES_INDEX = 8
+
 
 def parse_klines(raw_klines):
     klines = pandas.DataFrame(raw_klines, columns='''

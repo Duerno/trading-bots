@@ -2,6 +2,8 @@
 
 serialTrader:
   cycleTimeInSeconds: 15
+  candleSizeInMinutes: 1
+  candlesToRetrievePerCycle: 200
   assetToTrade: ADA
   baseAsset: USDT
   baseAssetUsagePercentage: 100
@@ -11,6 +13,7 @@ serialTrader:
 
 parallelTrader:
   cycleTimeInSeconds: 15
+  candleSizeInMinutes: 1
   baseAsset: USDT
   baseAssetAmountPerTrade: 15
   stopLossPercentage: 10
@@ -22,7 +25,9 @@ bollinger:
   minRelativeBandsDelta: 0.04
 
 periodMax:
-  periodUsedInDays: 20
+  # NOTE: candle (aka interval) size is defined by bots.
+  # NOTE: this value will be converted to days and rounded up.
+  numIntervals: 28800
   secondsToUpdateCache: 600
   cacheUpdater:
     enabled: true
@@ -30,17 +35,15 @@ periodMax:
 # Exchanges
 
 binance:
-  intervalInMinutes: 1
   taxPerTransaction: 0.075
   api:
     key: "sample-api-key"
     secret: "sample-api-secret"
 
 backtest:
-  intervalInMinutes: 3
-  numberOfIntervals: 20000
-  frameSize: 210
   taxPerTransaction: 0.075
+  totalNumberOfIntervals: 10000
+  startIntervalIndex: 200
 
 # Other dependencies
 

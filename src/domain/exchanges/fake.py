@@ -69,21 +69,21 @@ class FakeExchange(Exchange):
             }
         ]
 
-    def get_historical_klines(self, asset_to_trade: str, **kwargs):
-        raw_klines = [
+    def get_historical_klines(self, asset_to_trade: str, approx_interval_in_minutes: int, num_intervals: int) -> Dict:
+        return [
             [
-                1621120500000,
-                '47677.72000000',
-                '47781.79000000',
-                '47612.64000000',
-                '47768.35000000',
-                '18.42490400',
-                1621120559999,
-                '878556.84233035',
-                633,
-                '14.13153600',
-                '673858.40379332',
-                '0'
+                1621120500000,     # Open time
+                '47677.72000000',  # Open
+                '47781.79000000',  # High
+                '47612.64000000',  # Low
+                '47768.35000000',  # Close
+                '18.42490400',     # Volume
+                1621120559999,     # Close time
+                '878556.8423303',  # Quote asset volume
+                633,               # Number of trades
+                '14.13153600',     # Taker buy base asset volume
+                '673858.4037933',  # Taker buy quote asset volume
+                '0'                # Can be ignored
             ], [
                 1621120560000,
                 '47768.52000000',
@@ -110,25 +110,6 @@ class FakeExchange(Exchange):
                 '5.09070500',
                 '242721.43476742',
                 '0'
-            ]
-        ]
-        return utils.parse_klines(raw_klines)
-
-    def get_klines(self, symbol: str, interval: str, limit: int = 1) -> Dict:
-        return [
-            [
-                1499040000000,      # Open time
-                "0.01634790",       # Open
-                "0.80000000",       # High
-                "0.01575800",       # Low
-                "0.01577100",       # Close
-                "148976.11427815",  # Volume
-                1499644799999,      # Close time
-                "2434.19055334",    # Quote asset volume
-                308,                # Number of trades
-                "1756.87402397",    # Taker buy base asset volume
-                "28.46694368",      # Taker buy quote asset volume
-                "17928899.62484339"  # Can be ignored
             ]
         ]
 

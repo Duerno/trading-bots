@@ -6,28 +6,30 @@ from src.domain.exchanges import Exchange, utils
 
 
 class Backtest(Exchange):
-    def __init__(self, config, base_asset, assets_to_trade=None):
+    def __init__(self, config: Dict, interval_in_minutes: int, base_asset: str, assets_to_trade: str = None):
         self.ongoing_trades = {}
-        self.balance = 1.0
+        self.balance = 1000.0
         self.losses = 0
         self.gains = 0
 
         self.base_asset = base_asset
         self.tax = float(config['backtest']['taxPerTransaction'])
 
-        self.frame_size = int(config['backtest']['frameSize'])
-        self.num_intervals = int(config['backtest']['numberOfIntervals'])
-        self.current_data_index = self.frame_size - 1  # first index.
-        self.historical_data = HistoricalDataManager.get_historical_data(config, base_asset, assets_to_trade)
+        self.total_num_intervals = int(config['backtest']['totalNumberOfIntervals'])
+        self.current_data_index = int(config['backtest']['startIntervalIndex'])
+        self.historical_data = HistoricalDataManager.get_historical_data(
+            config, interval_in_minutes, base_asset, assets_to_trade)
 
     def get_market_depth(self, asset_to_trade: str):
         return None  # not supported yet.
 
     def get_ongoing_trades(self):
         self.current_data_index += 1
+        if self.current_data_index % 100 == 0:
+            logging.info(f'Simulation step: {self.current_data_index}')
 
         # end backtest when the last frame is overpast.
-        if self.current_data_index >= self.num_intervals:
+        if self.current_data_index >= self.total_num_intervals:
             logging.info(f'End of simulation losses={self.losses} gains={self.gains} balance={self.balance}')
             exit(0)
 
@@ -70,6 +72,9 @@ class Backtest(Exchange):
         loss_price = price * (100 - stop_loss_percentage + 2*self.tax) / 100.0
         quantity = base_asset_amount * (1.0 - self.tax / 100.0)
 
+        # TODO: fix order params precision.
+        # quantity, gain_price, loss_price = self.__fix_order_params(symbol, quantity, gain_price, loss_price)
+
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         self.ongoing_trades[symbol] = {
             'quantity': quantity,
@@ -84,26 +89,30 @@ class Backtest(Exchange):
     def get_current_price(self, asset_to_trade: str):
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         data = self.historical_data[symbol]
-        return float(data.iloc[self.current_data_index]['close'])
+        return float(data[self.current_data_index][utils.CLOSE_INDEX])
 
     def get_current_prices(self):
         prices = []
         for symbol in self.historical_data:
             prices.append({
                 'symbol': symbol,
-                'price': float(self.historical_data[symbol].iloc[self.current_data_index]['close'])
+                'price': float(self.historical_data[symbol][self.current_data_index][utils.CLOSE_INDEX])
             })
         return prices
 
-    def get_historical_klines(self, asset_to_trade: str):
+    def get_historical_klines(self, asset_to_trade: str, approx_interval_in_minutes: int, num_intervals: int) -> Dict:
+        if num_intervals > self.current_data_index + 1:
+            raise ValueError(
+                f'Failed to get klines: num_intervals ({num_intervals}) cannot be higher than current index ({self.current_data_index}) + 1')
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         data = self.historical_data[symbol]
-        begin = self.current_data_index - self.frame_size + 1
-        end = self.current_data_index
-        return data.iloc[begin:end].copy()
 
-    def get_klines(self, symbol: str, interval: str, limit: int = 1) -> Dict:
-        return {}
+        # TODO: use the provided approx_interval_in_minutes instead of assuming it is
+        # equal to the self.historical_data interval size.
+        begin = self.current_data_index - num_intervals + 1
+        end = self.current_data_index
+
+        return data[begin:end]
 
     def reset_client(self):
         pass
