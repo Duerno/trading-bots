@@ -1,6 +1,3 @@
-from typing import Dict
-
-
 class Exchange:
     """
     Exchange is an interface that defines the implementation of all wrappers
@@ -8,7 +5,7 @@ class Exchange:
     exchange.
     """
 
-    def __init__(self, config: Dict, base_asset: str):
+    def __init__(self, config: dict, base_asset: str):
         pass
 
     def get_market_depth(self, asset_to_trade: str):
@@ -32,7 +29,7 @@ class Exchange:
     def get_current_prices(self):
         pass
 
-    def get_historical_klines(self, asset_to_trade: str, approx_interval_in_minutes: int, num_intervals: int) -> Dict:
+    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> dict:
         pass
 
     def reset_client(self):

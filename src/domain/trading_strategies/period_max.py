@@ -5,6 +5,7 @@ import math
 
 from src.domain.cache import Cache
 from src.domain.exchanges import Exchange, utils
+from src.domain.utils import datetime
 
 from . import TradingStrategy
 
@@ -19,13 +20,20 @@ class PeriodMax(TradingStrategy):
         period, the trend is up and the strategy would say to buy.
     """
 
-    def __init__(self, config, exchange: Exchange, cache: Cache, base_asset: str, interval_in_minutes: int):
+    def __init__(self, config, exchange: Exchange, cache: Cache, base_asset: str, interval: str):
         self.cache = cache
         self.seconds_to_update_cache = config['periodMax']['secondsToUpdateCache']
         self.base_asset = base_asset
 
+        # Validate period to be used.
+        num_intervals = int(config['periodMax']['numIntervals'])
+        interval_in_seconds = num_intervals * datetime.interval_to_seconds(interval)
+        one_day_in_seconds = datetime.interval_to_seconds('1d')
+        if interval_in_seconds % one_day_in_seconds != 0:
+            raise ValueError(f'Invalid period: "{num_intervals} * {interval}" should be multiple of "1d"')
+
         self.exchange = exchange
-        self.num_days = math.ceil(int(config['periodMax']['numIntervals']) * interval_in_minutes / (60 * 24))
+        self.num_days = interval_in_seconds / one_day_in_seconds
         self.cache_key_name = f'max-value-in-{self.num_days}-days'
 
         if str(config['periodMax']['cacheUpdater']['enabled']).lower() == 'true':
@@ -62,7 +70,7 @@ class PeriodMax(TradingStrategy):
 
         def update_max_for_symbol(symbol):
             asset_to_trade = symbol.replace(self.base_asset, '')
-            klines = self.exchange.get_historical_klines(asset_to_trade, 60 * 24, self.num_days)
+            klines = self.exchange.get_historical_klines(asset_to_trade, '1d', self.num_days)
             max_for_symbol = max(list(map(lambda x: float(x[utils.HIGH_INDEX]), klines)))
             symbols_period_max[symbol] = max_for_symbol  # must be thread-safe.
 

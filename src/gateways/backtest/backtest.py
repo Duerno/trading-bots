@@ -1,12 +1,11 @@
 import logging
-from typing import Dict
 
 from src.gateways.backtest.historical_data_manager import HistoricalDataManager
 from src.domain.exchanges import Exchange, utils
 
 
 class Backtest(Exchange):
-    def __init__(self, config: Dict, interval_in_minutes: int, base_asset: str, assets_to_trade: str = None):
+    def __init__(self, config: dict, interval: str, base_asset: str, assets_to_trade: str = None):
         self.ongoing_trades = {}
         self.balance = 1000.0
         self.losses = 0
@@ -18,7 +17,7 @@ class Backtest(Exchange):
         self.total_num_intervals = int(config['backtest']['totalNumberOfIntervals'])
         self.current_data_index = int(config['backtest']['startIntervalIndex'])
         self.historical_data = HistoricalDataManager.get_historical_data(
-            config, interval_in_minutes, base_asset, assets_to_trade)
+            config, interval, base_asset, assets_to_trade)
 
     def get_market_depth(self, asset_to_trade: str):
         return None  # not supported yet.
@@ -100,15 +99,15 @@ class Backtest(Exchange):
             })
         return prices
 
-    def get_historical_klines(self, asset_to_trade: str, approx_interval_in_minutes: int, num_intervals: int) -> Dict:
+    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> dict:
         if num_intervals > self.current_data_index + 1:
             raise ValueError(
                 f'Failed to get klines: num_intervals ({num_intervals}) cannot be higher than current index ({self.current_data_index}) + 1')
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         data = self.historical_data[symbol]
 
-        # TODO: use the provided approx_interval_in_minutes instead of assuming it is
-        # equal to the self.historical_data interval size.
+        # TODO: use the provided interval instead of assuming it is equal to
+        # the self.historical_data interval size.
         begin = self.current_data_index - num_intervals + 1
         end = self.current_data_index
 

@@ -1,9 +1,9 @@
 # Bots
 
 serialTrader:
-  cycleTimeInSeconds: 15
-  candleSizeInMinutes: 1
-  candlesToRetrievePerCycle: 200
+  cycleTime: 15s
+  candleSize: 1m
+  candlesPerCycle: 200
   assetToTrade: ADA
   baseAsset: USDT
   baseAssetUsagePercentage: 100
@@ -12,8 +12,8 @@ serialTrader:
   plotResults: false
 
 parallelTrader:
-  cycleTimeInSeconds: 15
-  candleSizeInMinutes: 1
+  cycleTime: 15s
+  candleSize: 1m
   baseAsset: USDT
   baseAssetAmountPerTrade: 15
   stopLossPercentage: 10
@@ -26,7 +26,6 @@ bollinger:
 
 periodMax:
   # NOTE: candle (aka interval) size is defined by bots.
-  # NOTE: this value will be converted to days and rounded up.
   numIntervals: 28800
   secondsToUpdateCache: 600
   cacheUpdater:

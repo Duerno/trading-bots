@@ -4,6 +4,7 @@ import binance as bnb
 from typing import Dict, Union
 
 from src.domain.exchanges import Exchange, utils
+from src.domain.utils import datetime
 
 
 class Binance(Exchange):
@@ -106,12 +107,17 @@ class Binance(Exchange):
     def get_current_prices(self):
         return self.binance_client.get_all_tickers()
 
-    def get_historical_klines(self, asset_to_trade: str, approx_interval_in_minutes: int, num_intervals: int) -> Dict:
-        interval, unit = self.__get_valid_klines_interval(approx_interval_in_minutes)
+    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> dict:
+        # Reference: https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#enum-definitions
+        valid_intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
+
+        if interval not in valid_intervals:
+            raise ValueError(f'Invalid interval: "{interval}"')
+
         return self.binance_client.get_historical_klines(
             utils.build_symbol(asset_to_trade, self.base_asset),
-            f'{interval}{unit}',
-            f'{interval * num_intervals} {self.__get_time_unit_in_full(unit)} ago UTC')
+            interval,
+            f'{num_intervals} {datetime.get_time_unit_in_full(interval)} ago UTC')
 
     def reset_client(self):
         self.binance_client = bnb.Client(self.api_key, self.api_secret)
@@ -171,38 +177,3 @@ class Binance(Exchange):
 
     def __get_min_notional(self, symbol):
         return float(self.exchange_info['symbols'][symbol]['filters']['MIN_NOTIONAL']['minNotional'])
-
-    def __get_valid_klines_interval(self, target_interval_in_minutes: int) -> Union[int, str]:
-        # Reference: https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#enum-definitions
-        valid_intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
-
-        def interval_in_minutes(interval: str) -> int:
-            minutes_per_unit = {
-                'm': 1,
-                'h': 60,
-                'd': 60 * 24,
-                'w': 60 * 24 * 7,
-            }
-            return int(interval[:-1]) * minutes_per_unit[interval[-1]]
-
-        # get nearest interval.
-        nearest_interval_index = 0
-        while nearest_interval_index < len(valid_intervals)-1:
-            curr_interval_in_minutes = interval_in_minutes(valid_intervals[nearest_interval_index])
-            next_interval_in_minutes = interval_in_minutes(valid_intervals[nearest_interval_index+1])
-            if abs(next_interval_in_minutes - target_interval_in_minutes) > abs(curr_interval_in_minutes - target_interval_in_minutes):
-                break
-            nearest_interval_index += 1
-
-        # split interval in value and unit.
-        nearest_interval = valid_intervals[nearest_interval_index]
-        return int(nearest_interval[:-1]), nearest_interval[-1]
-
-    def __get_time_unit_in_full(self, unit: str) -> str:
-        unit_in_full = {
-            'm': 'minutes',
-            'h': 'hours',
-            'd': 'days',
-            'w': 'weeks',
-        }
-        return unit_in_full[unit]

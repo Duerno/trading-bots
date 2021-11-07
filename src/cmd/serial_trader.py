@@ -5,6 +5,7 @@ import logging
 import time
 from matplotlib import pyplot as plt
 
+from src.domain.utils import datetime
 from src.domain.exchanges import Exchange, fake, utils
 from src.domain.trading_strategies import TradingStrategy, bollinger, dma
 from src.gateways.binance import binance
@@ -41,14 +42,14 @@ def serial_trader(ctx, exchange_name, trading_strategies):
 
     base_asset = config['serialTrader']['baseAsset']
     asset_to_trade = config['serialTrader']['assetToTrade']
-    candle_size_in_minutes = config['serialTrader']['candleSizeInMinutes']
+    candle_size = config['serialTrader']['candleSize']
 
     # initialize exchange.
     exchange: Exchange = None
     if exchange_name == 'binance':
         exchange = binance.Binance(config, base_asset)
     elif exchange_name == 'backtest':
-        exchange = backtest.Backtest(config, candle_size_in_minutes, base_asset, [asset_to_trade])
+        exchange = backtest.Backtest(config, candle_size, base_asset, [asset_to_trade])
     elif exchange_name == 'fake':
         exchange = fake.FakeExchange(config, base_asset)
     else:
@@ -75,11 +76,11 @@ class SerialTrader:
         self.strategies = strategies
 
         botConfig = config['serialTrader']
-        self.cycle_time_in_seconds = botConfig['cycleTimeInSeconds']
+        self.cycle_time_in_seconds = datetime.interval_to_seconds(botConfig['cycleTime'])
+        self.candle_size = botConfig['candleSize']
+        self.candles_per_cycle = botConfig['candlesPerCycle']
         self.asset_to_trade = botConfig['assetToTrade']
         self.base_asset = botConfig['baseAsset']
-        self.candle_size_in_minutes = botConfig['candleSizeInMinutes']
-        self.candles_to_retrieve_per_cycle = botConfig['candlesToRetrievePerCycle']
         self.plot_results = botConfig['plotResults']
         self.stop_loss_percentage = float(botConfig['stopLossPercentage'])
         self.stop_gain_percentage = float(botConfig['stopGainPercentage'])
@@ -104,8 +105,8 @@ class SerialTrader:
         if symbol not in ongoing_trades:
             raw_klines = self.exchange.get_historical_klines(
                 self.asset_to_trade,
-                self.candle_size_in_minutes,
-                self.candles_to_retrieve_per_cycle)
+                self.candle_size,
+                self.candles_per_cycle)
             klines = utils.parse_klines(raw_klines)
             df = self.__enrich_klines_with_indicators(klines)
             price = self.exchange.get_current_price(self.asset_to_trade)

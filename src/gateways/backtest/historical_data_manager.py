@@ -1,6 +1,7 @@
 import binance as bnb
 
 from src.domain.exchanges import utils
+from src.domain.utils import datetime
 
 
 class HistoricalDataManager():
@@ -8,7 +9,7 @@ class HistoricalDataManager():
     def __init__(self, config):
         pass
 
-    def get_historical_data(config, interval_in_minutes, base_asset, assets_to_trade):
+    def get_historical_data(config: dict, interval: str, base_asset: str, assets_to_trade: str) -> dict:
         binance_api_key = config['binance']['api']['key']
         binance_api_secret = config['binance']['api']['secret']
         binance_client = bnb.Client(binance_api_key, binance_api_secret)
@@ -31,7 +32,7 @@ class HistoricalDataManager():
             # TODO: cache data instead of requesting from Binance everytime.
             data[symbol] = binance_client.get_historical_klines(
                 symbol,
-                f'{interval_in_minutes}m',
-                f'{interval_in_minutes * total_num_intervals} minutes ago UTC')
+                interval,
+                f'{total_num_intervals} {datetime.get_time_unit_in_full(interval)} ago UTC')
 
         return data

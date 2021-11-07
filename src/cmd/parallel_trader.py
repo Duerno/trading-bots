@@ -5,6 +5,7 @@ import logging
 import time
 import traceback
 
+from src.domain.utils import datetime
 from src.domain.cache import Cache
 from src.domain.exchanges import Exchange
 from src.domain.trading_strategies import TradingStrategy, period_max
@@ -35,7 +36,7 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     config = ctx.obj['config']
 
     base_asset = config['parallelTrader']['baseAsset']
-    candle_size_in_minutes = int(config['parallelTrader']['candleSizeInMinutes'])
+    candle_size = int(config['parallelTrader']['candleSize'])
 
     # initialize exchange.
     exchange: Exchange = None
@@ -51,7 +52,7 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     strategies: List[TradingStrategy] = []
     trading_strategies_list = str(trading_strategies).split(',')
     if 'period-max' in trading_strategies_list:
-        strategies.append(period_max.PeriodMax(config, exchange, cache, base_asset, candle_size_in_minutes))
+        strategies.append(period_max.PeriodMax(config, exchange, cache, base_asset, candle_size))
     if len(strategies) == 0:
         raise ValueError('No valid strategy found in: %s' % trading_strategies)
 
@@ -66,7 +67,7 @@ class ParallelTrader:
         self.strategies = strategies
 
         botConfig = config['parallelTrader']
-        self.cycle_time_in_seconds = botConfig['cycleTimeInSeconds']
+        self.cycle_time_in_seconds = datetime.interval_to_seconds(botConfig['cycleTime'])
         self.base_asset = botConfig['baseAsset']
         self.stop_loss_percentage = float(botConfig['stopLossPercentage'])
         self.stop_gain_percentage = float(botConfig['stopGainPercentage'])
