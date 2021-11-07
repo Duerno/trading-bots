@@ -17,6 +17,36 @@ services:
       - .:/app
     command: python3 main.py --log-level=info serial-trader --exchange-name=binance --trading-strategies=bollinger
 
+  backtest-serial-dma:
+    build: .
+    depends_on:
+      - redis
+    env_file:
+      - ./.env
+    environment:
+      - BOT_SERIALTRADER_CYCLETIME=0s
+      - BOT_SERIALTRADER_CANDLESIZE=15m
+      - BOT_BACKTEST_TOTALNUMBEROFINTERVALS=4000
+      - BOT_REDIS_HOST=redis
+    volumes:
+      - .:/app
+    command: python3 main.py --log-level=info serial-trader --exchange-name=backtest --trading-strategies=dma
+
+  backtest-serial-bollinger:
+    build: .
+    depends_on:
+      - redis
+    env_file:
+      - ./.env
+    environment:
+      - BOT_SERIALTRADER_CYCLETIME=0s
+      - BOT_SERIALTRADER_CANDLESIZE=15m
+      - BOT_BACKTEST_TOTALNUMBEROFINTERVALS=4000
+      - BOT_REDIS_HOST=redis
+    volumes:
+      - .:/app
+    command: python3 main.py --log-level=info serial-trader --exchange-name=backtest --trading-strategies=bollinger
+
   redis:
     image: redis:6-alpine
     ports:

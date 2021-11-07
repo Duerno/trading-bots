@@ -1,5 +1,6 @@
 from typing import List, Dict
 
+import traceback
 import click
 import logging
 import time
@@ -92,7 +93,7 @@ class SerialTrader:
             try:
                 self.__run_internal()
             except Exception as e:
-                logging.error(f'Fail to run Serial Trader error={e}')
+                logging.error(f'Fail to run Serial Trader error={e} traceback={traceback.format_exc()}')
                 self.exchange.reset_client()
             time.sleep(self.cycle_time_in_seconds)
 

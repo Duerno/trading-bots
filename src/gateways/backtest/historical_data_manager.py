@@ -14,7 +14,12 @@ class HistoricalDataManager():
         binance_api_secret = config['binance']['api']['secret']
         binance_client = bnb.Client(binance_api_key, binance_api_secret)
 
+        # since we observed Binance API returning lower data then asked, we
+        # are adding a little extra time the the total time used.
+        EXTRA_TIME = 200
+
         total_num_intervals = int(config['backtest']['totalNumberOfIntervals'])
+        total_time = total_num_intervals * int(interval[:-1]) + EXTRA_TIME
 
         if assets_to_trade == None:
             assets_to_trade = list()
@@ -30,9 +35,13 @@ class HistoricalDataManager():
             symbol = utils.build_symbol(asset, base_asset)
 
             # TODO: cache data instead of requesting from Binance everytime.
-            data[symbol] = binance_client.get_historical_klines(
+            data_for_symbol = binance_client.get_historical_klines(
                 symbol,
                 interval,
-                f'{total_num_intervals} {datetime.get_time_unit_in_full(interval)} ago UTC')
+                f'{total_time} {datetime.get_time_unit_in_full(interval)} ago UTC')
+
+            data[symbol] = list(data_for_symbol[:total_num_intervals])
+            if len(data[symbol]) != total_num_intervals:
+                raise ValueError(f'Data fetch error: {len(data[symbol])} should be equal to {total_num_intervals}')
 
         return data

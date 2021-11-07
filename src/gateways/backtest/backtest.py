@@ -29,6 +29,16 @@ class Backtest(Exchange):
 
         # end backtest when the last frame is overpast.
         if self.current_data_index >= self.total_num_intervals:
+            # fix current data index in order not to access invalid memory addresses.
+            self.current_data_index = self.total_num_intervals - 1
+
+            # sell all ongoing orders.
+            for symbol in list(self.ongoing_trades):
+                trade = self.ongoing_trades[symbol]
+                current_price = self.get_current_price(symbol.replace(self.base_asset, ''))
+                self.balance += trade['quantity'] * (current_price / trade['price'] - self.tax / 100.0)
+
+            # end simulation.
             logging.info(f'End of simulation losses={self.losses} gains={self.gains} balance={self.balance}')
             exit(0)
 
@@ -103,13 +113,19 @@ class Backtest(Exchange):
         if num_intervals > self.current_data_index + 1:
             raise ValueError(
                 f'Failed to get klines: num_intervals ({num_intervals}) cannot be higher than current index ({self.current_data_index}) + 1')
+
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
+        if symbol not in self.historical_data:
+            raise ValueError(f'Failed to get historical data from {symbol}')
+
         data = self.historical_data[symbol]
+        if len(data) != self.total_num_intervals:
+            raise ValueError(f'Data loss warning: {len(data)} should be equal to {self.total_num_intervals}')
 
         # TODO: use the provided interval instead of assuming it is equal to
         # the self.historical_data interval size.
         begin = self.current_data_index - num_intervals + 1
-        end = self.current_data_index
+        end = self.current_data_index + 1
 
         return data[begin:end]
 
