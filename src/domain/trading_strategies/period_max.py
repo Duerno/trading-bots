@@ -30,14 +30,16 @@ class PeriodMax(TradingStrategy):
         interval_in_seconds = num_intervals * datetime.interval_to_seconds(interval)
         one_day_in_seconds = datetime.interval_to_seconds('1d')
         if interval_in_seconds % one_day_in_seconds != 0:
-            raise ValueError(f'Invalid period: "{num_intervals} * {interval}" should be multiple of "1d"')
+            raise ValueError(f'invalid period: "{num_intervals} * {interval}" should be multiple of "1d"')
 
         self.exchange = exchange
-        self.num_days = interval_in_seconds / one_day_in_seconds
+        self.num_days = interval_in_seconds // one_day_in_seconds
         self.cache_key_name = f'max-value-in-{self.num_days}-days'
 
         if str(config['periodMax']['cacheUpdater']['enabled']).lower() == 'true':
             threading.Thread(target=self.__cache_updater).start()
+
+        logging.info(f'PeriodMax started with params: num_days={self.num_days}, cache_key_name={self.cache_key_name}')
 
     def should_place_order(self, df, current_price: float, symbol: str) -> bool:
         max_price = self.cache.hget(self.cache_key_name, symbol)
@@ -70,7 +72,11 @@ class PeriodMax(TradingStrategy):
 
         def update_max_for_symbol(symbol):
             asset_to_trade = symbol.replace(self.base_asset, '')
-            klines = self.exchange.get_historical_klines(asset_to_trade, '1d', self.num_days)
+            try:
+                klines = self.exchange.get_historical_klines(asset_to_trade, '1d', self.num_days)
+            except Exception as e:
+                logging.warning(f'Ignoring PeriodMax update for {symbol}, err={e}')
+                return
             max_for_symbol = max(list(map(lambda x: float(x[utils.HIGH_INDEX]), klines)))
             symbols_period_max[symbol] = max_for_symbol  # must be thread-safe.
 

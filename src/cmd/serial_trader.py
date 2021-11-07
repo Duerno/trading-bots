@@ -54,7 +54,7 @@ def serial_trader(ctx, exchange_name, trading_strategies):
     elif exchange_name == 'fake':
         exchange = fake.FakeExchange(config, base_asset)
     else:
-        raise ValueError('Invalid exchange name: %s' % exchange_name)
+        raise ValueError('invalid exchange name: %s' % exchange_name)
 
     # initialize strategies.
     strategies: List[TradingStrategy] = []
@@ -64,7 +64,7 @@ def serial_trader(ctx, exchange_name, trading_strategies):
     if 'dma' in trading_strategies_list:
         strategies.append(dma.DualMovingAverage(config))
     if len(strategies) == 0:
-        raise ValueError('No valid strategy found in: %s' % trading_strategies)
+        raise ValueError('no valid strategy found in: %s' % trading_strategies)
 
     # initialize and run bot.
     bot = SerialTrader(config, exchange, strategies)

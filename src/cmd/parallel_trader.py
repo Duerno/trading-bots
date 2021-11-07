@@ -36,14 +36,14 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     config = ctx.obj['config']
 
     base_asset = config['parallelTrader']['baseAsset']
-    candle_size = int(config['parallelTrader']['candleSize'])
+    candle_size = config['parallelTrader']['candleSize']
 
     # initialize exchange.
     exchange: Exchange = None
     if exchange_name == 'binance':
         exchange = binance.Binance(config, base_asset)
     else:
-        raise ValueError('Invalid exchange name: %s' % exchange_name)
+        raise ValueError('invalid exchange name: %s' % exchange_name)
 
     # initialize cache.
     cache: Cache = redis.Redis(config)
@@ -54,7 +54,7 @@ def parallel_trader(ctx, exchange_name, trading_strategies):
     if 'period-max' in trading_strategies_list:
         strategies.append(period_max.PeriodMax(config, exchange, cache, base_asset, candle_size))
     if len(strategies) == 0:
-        raise ValueError('No valid strategy found in: %s' % trading_strategies)
+        raise ValueError('no valid strategy found in: %s' % trading_strategies)
 
     # initialize and run bot.
     bot = ParallelTrader(config, exchange, strategies)

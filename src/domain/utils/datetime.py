@@ -8,12 +8,12 @@ def get_time_unit_in_full(interval: str) -> str:
     }
 
     if interval[-1] not in unit_in_full:
-        raise ValueError(f'Invalid unit: "{interval[-1]}"')
+        raise ValueError(f'invalid unit: "{interval[-1]}"')
 
     return unit_in_full[interval[-1]]
 
 
-def interval_to_seconds(interval: str) -> str:
+def interval_to_seconds(interval: str) -> int:
     seconds_per_unit = {
         's': 1,
         'm': 60,
@@ -23,6 +23,6 @@ def interval_to_seconds(interval: str) -> str:
     }
 
     if len(interval) < 2 or interval[-1] not in seconds_per_unit:
-        raise ValueError(f'Invalid interval: "{interval}"')
+        raise ValueError(f'invalid interval: "{interval}"')
 
     return int(interval[:-1]) * seconds_per_unit[interval[-1]]

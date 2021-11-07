@@ -109,18 +109,18 @@ class Backtest(Exchange):
             })
         return prices
 
-    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> dict:
+    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> list:
         if num_intervals > self.current_data_index + 1:
             raise ValueError(
-                f'Failed to get klines: num_intervals ({num_intervals}) cannot be higher than current index ({self.current_data_index}) + 1')
+                f'failed to get klines: num_intervals ({num_intervals}) cannot be higher than current index ({self.current_data_index}) + 1')
 
         symbol = utils.build_symbol(asset_to_trade, self.base_asset)
         if symbol not in self.historical_data:
-            raise ValueError(f'Failed to get historical data from {symbol}')
+            raise ValueError(f'failed to get historical data from {symbol}')
 
         data = self.historical_data[symbol]
         if len(data) != self.total_num_intervals:
-            raise ValueError(f'Data loss warning: {len(data)} should be equal to {self.total_num_intervals}')
+            raise ValueError(f'data loss warning: {len(data)} should be equal to {self.total_num_intervals}')
 
         # TODO: use the provided interval instead of assuming it is equal to
         # the self.historical_data interval size.

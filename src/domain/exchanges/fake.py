@@ -69,7 +69,7 @@ class FakeExchange(Exchange):
             }
         ]
 
-    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> dict:
+    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> list:
         return [
             [
                 1621120500000,     # Open time

@@ -42,6 +42,6 @@ class HistoricalDataManager():
 
             data[symbol] = list(data_for_symbol[:total_num_intervals])
             if len(data[symbol]) != total_num_intervals:
-                raise ValueError(f'Data fetch error: {len(data[symbol])} should be equal to {total_num_intervals}')
+                raise ValueError(f'data fetch error: {len(data[symbol])} should be equal to {total_num_intervals}')
 
         return data

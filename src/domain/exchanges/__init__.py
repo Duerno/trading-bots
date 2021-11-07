@@ -29,7 +29,7 @@ class Exchange:
     def get_current_prices(self):
         pass
 
-    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> dict:
+    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> list:
         pass
 
     def reset_client(self):

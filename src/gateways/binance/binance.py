@@ -107,17 +107,22 @@ class Binance(Exchange):
     def get_current_prices(self):
         return self.binance_client.get_all_tickers()
 
-    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> dict:
-        # Reference: https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#enum-definitions
+    def get_historical_klines(self, asset_to_trade: str, interval: str, num_intervals: int) -> list:
+        # reference: https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#enum-definitions
         valid_intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
-
         if interval not in valid_intervals:
-            raise ValueError(f'Invalid interval: "{interval}"')
+            raise ValueError(f'invalid interval: "{interval}"')
 
-        return self.binance_client.get_historical_klines(
+        data = self.binance_client.get_historical_klines(
             utils.build_symbol(asset_to_trade, self.base_asset),
             interval,
-            f'{num_intervals} {datetime.get_time_unit_in_full(interval)} ago UTC')
+            f'{num_intervals * int(interval[:-1])} {datetime.get_time_unit_in_full(interval)} ago UTC')
+
+        data = list(data[:num_intervals])
+        if len(data) != num_intervals:
+            raise ValueError(f'data fetch error: {len(data)} should be equal to {num_intervals}')
+
+        return data
 
     def reset_client(self):
         self.binance_client = bnb.Client(self.api_key, self.api_secret)

@@ -41,7 +41,7 @@ def setup_logging(log_level):
     format = '%(levelname)s\t%(asctime)s %(message)s'
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % log_level)
+        raise ValueError('invalid log level: %s' % log_level)
     logging.basicConfig(encoding='utf-8', format=format, level=numeric_level)
 
 
@@ -50,7 +50,7 @@ def parse_config(filename, env_vars_prefix='bot'):
     Load a yaml configuration file and resolve any environment variables.
     """
     if not os.path.isfile(filename):
-        raise ValueError('Invalid filename: %s' % filename)
+        raise ValueError('invalid filename: %s' % filename)
 
     config = None
     with open(filename) as data:

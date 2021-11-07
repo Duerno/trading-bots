@@ -3,16 +3,24 @@ version: "3.9"
 services:
   parallel-bot:
     build: .
+    depends_on:
+      - redis
     env_file:
       - ./.env
+    environment:
+      - BOT_REDIS_HOST=redis
     volumes:
       - .:/app
     command: python main.py --log-level=debug parallel-trader --exchange-name=binance --trading-strategies=period-max
 
   serial-bot:
     build: .
+    depends_on:
+      - redis
     env_file:
       - ./.env
+    environment:
+      - BOT_REDIS_HOST=redis
     volumes:
       - .:/app
     command: python3 main.py --log-level=info serial-trader --exchange-name=binance --trading-strategies=bollinger
